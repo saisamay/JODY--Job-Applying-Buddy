@@ -11,12 +11,14 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from redis import Redis, RedisError
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from .config import database_url, redis_url
+from .config import redis_url
 from .contracts import Error, Live, Ready
+from .controls import controls
 from .routes import router
+from .security import encryption_key, runtime_engine
 
 log = logging.getLogger("jody.http")
 log.setLevel(logging.INFO)
@@ -30,12 +32,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if len(key) < 32:
         raise RuntimeError("Set JODY_OWNER_KEY to a generated key of at least 32 characters.")
     app.state.owner_key = key
-    app.state.db = create_engine(
-        database_url(),
-        pool_pre_ping=True,
-        pool_timeout=3,
-        connect_args={"connect_timeout": 3, "options": "-c statement_timeout=5000"},
-    )
+    app.state.secret_key = encryption_key()
+    app.state.db = runtime_engine()
     app.state.queue = Redis.from_url(redis_url(), socket_connect_timeout=2, socket_timeout=2)
     try:
         yield
@@ -46,6 +44,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="JODY", version="0.1.0", lifespan=lifespan)
 app.include_router(router)
+app.include_router(controls)
 
 
 @app.middleware("http")
@@ -105,7 +104,7 @@ def ready(request: Request, response: Response) -> Ready:
                 conn.scalar(
                     text("""
                 SELECT EXISTS (SELECT FROM pg_extension WHERE extname = 'vector')
-                   AND EXISTS (SELECT FROM alembic_version WHERE version_num = '0001_foundation')
+                   AND EXISTS (SELECT FROM alembic_version WHERE version_num = '0002_secure_data')
             """)
                 )
             )

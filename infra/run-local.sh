@@ -13,9 +13,16 @@ if [[ "${JODY_USE_EXISTING_SERVICES:-0}" != 1 ]]; then
   docker compose --env-file .env -f infra/compose.yaml up -d --wait
 fi
 .venv/bin/alembic upgrade head
+.venv/bin/python -m jody.provision
 .venv/bin/python apps/worker/check.py
 
-.venv/bin/uvicorn jody.main:app --host 127.0.0.1 --port 8000 --no-access-log &
+(
+  # Derive the restricted URL before removing administrative credentials from the API process.
+  JODY_RUNTIME_DATABASE_URL="$(.venv/bin/python -c 'from jody.config import runtime_url; print(runtime_url().render_as_string(hide_password=False))')"
+  export JODY_RUNTIME_DATABASE_URL
+  unset DATABASE_URL POSTGRES_PASSWORD JODY_DB_APP_PASSWORD
+  exec .venv/bin/uvicorn jody.main:app --host 127.0.0.1 --port 8000 --no-access-log
+) &
 api_pid=$!
 web_pid=""
 cleanup() {
@@ -37,6 +44,6 @@ if [[ "${JODY_WEB_MODE:-dev}" == start ]]; then
 else
   web_args=(dev --webpack)
 fi
-(unset POSTGRES_PASSWORD DATABASE_URL REDIS_URL JODY_OWNER_KEY; cd apps/web && exec ../../node_modules/.bin/next "${web_args[@]}" --hostname 127.0.0.1 --port 3000) &
+(unset JODY_ENCRYPTION_KEY JODY_DB_APP_PASSWORD JODY_RUNTIME_DATABASE_URL POSTGRES_PASSWORD DATABASE_URL REDIS_URL JODY_OWNER_KEY; cd apps/web && exec ../../node_modules/.bin/next "${web_args[@]}" --hostname 127.0.0.1 --port 3000) &
 web_pid=$!
 wait -n "$api_pid" "$web_pid"

@@ -16,3 +16,16 @@ def database_url() -> str | URL:
 
 def redis_url() -> str:
     return os.getenv("REDIS_URL") or f"redis://127.0.0.1:{os.getenv('REDIS_PORT', '56379')}/0"
+
+
+def runtime_url() -> URL:
+    """Same database, independent least-privilege login. Supports an explicit hosted URL."""
+    from hashlib import sha256
+
+    from sqlalchemy import make_url
+
+    if value := os.environ.get("JODY_RUNTIME_DATABASE_URL"):
+        return make_url(value)
+    admin = make_url(database_url())
+    suffix = sha256((admin.database or "").encode()).hexdigest()[:12]
+    return admin.set(username=f"jody_app_{suffix}", password=os.environ["JODY_DB_APP_PASSWORD"])

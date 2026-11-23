@@ -13,6 +13,11 @@ test("owner can sign in, save a manual job, reload, retry and sign out", async (
     await expect(page.getByText("Services ready")).toBeVisible();
     await page.getByLabel("Owner access key").fill(key);
     await page.getByRole("button", { name: "Open workspace" }).click();
+    await expect(page.getByText("Background tasks paused")).toBeVisible();
+    await page.getByRole("button", { name: "Resume tasks" }).click();
+    await expect(page.getByText("Background tasks active")).toBeVisible();
+    await page.getByRole("button", { name: "Pause all tasks" }).click();
+    await expect(page.getByText("Background tasks paused")).toBeVisible();
     const fixture = "Synthetic JODY foundation smoke vacancy";
     for (let attempt = 0; attempt < 2; attempt++) {
       await page.getByLabel("Job description").fill(fixture);

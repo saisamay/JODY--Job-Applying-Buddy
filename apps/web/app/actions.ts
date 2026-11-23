@@ -63,3 +63,21 @@ export async function saveJob(
   revalidatePath("/");
   return "Job saved.";
 }
+
+export async function changePause(
+  previous: string,
+  form: FormData,
+): Promise<string> {
+  const token = (await cookies()).get("jody_session")?.value;
+  if (!token) return "Sign in to change the global pause.";
+  const desired = form.get("paused");
+  if (desired !== "true" && desired !== "false")
+    return "Invalid pause setting.";
+  try {
+    await api.setGate(token, desired === "true", String(form.get("command")));
+  } catch (error) {
+    return message(error);
+  }
+  revalidatePath("/");
+  return "";
+}

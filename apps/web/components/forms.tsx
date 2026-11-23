@@ -1,7 +1,7 @@
 "use client";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { signIn, signOut, saveJob } from "../app/actions";
+import { changePause, signIn, signOut, saveJob } from "../app/actions";
 
 function Submit({ label, waiting }: { label: string; waiting: string }) {
   const { pending } = useFormStatus();
@@ -73,6 +73,29 @@ export function IntakeForm() {
       />
       <Submit label="Save job" waiting="Saving…" />
       <Feedback message={state} />
+    </form>
+  );
+}
+
+export function PauseForm({
+  paused,
+  command,
+}: {
+  paused: boolean;
+  command: string;
+}) {
+  const [message, action, pending] = useActionState(changePause, "");
+  return (
+    <form action={action} className="mb-5 flex flex-wrap items-center gap-4">
+      <span role="status">
+        {paused ? "Background tasks paused" : "Background tasks active"}
+      </span>
+      <input type="hidden" name="paused" value={String(!paused)} />
+      <input type="hidden" name="command" value={command} />
+      <button className="quiet" disabled={pending}>
+        {paused ? "Resume tasks" : "Pause all tasks"}
+      </button>
+      <Feedback message={message} />
     </form>
   );
 }

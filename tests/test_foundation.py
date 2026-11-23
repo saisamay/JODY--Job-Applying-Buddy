@@ -4,8 +4,8 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 from jody.main import app
-from jody.routes import digest
-from jody.tables import events, observations, owners, sessions
+from jody.security import digest
+from jody.tables import events, observations, sessions, users
 from redis import ConnectionError
 from sqlalchemy import func, insert, select, text
 
@@ -45,7 +45,7 @@ def test_validation(client, auth):
         assert rejected.json() == {"detail": "Check the submitted fields."}
 
 
-def test_concurrent_intake(client, auth):
+def test_concurrent_intake(client, auth, admin_db):
     body = {"description": "Synthetic engineer opening", "source_url": "https://example.org/jobs/1"}
 
     def submit(_):
@@ -59,22 +59,26 @@ def test_concurrent_intake(client, auth):
     assert (
         sum(item["id"] == ids[0] for item in client.get("/api/v1/jobs", headers=auth).json()) == 1
     )
-    with app.state.db.connect() as conn:
+    with admin_db.connect() as conn:
         for table in [events, observations]:
             assert conn.scalar(select(func.count()).where(table.c.job_id == ids[0])) == 1
 
 
-def test_owner_scope(client, auth):
+def test_owner_scope(client, auth, admin_db):
     job = client.post(
         "/api/v1/jobs/manual", headers=auth, json={"description": "Private fixture"}
     ).json()
     other_owner = uuid4()
     other_token = uuid4().hex
-    with app.state.db.begin() as conn:
-        conn.execute(insert(owners).values(id=other_owner))
+    with admin_db.begin() as conn:
+        conn.execute(
+            insert(users).values(
+                id=other_owner, email="other-fixture@example.invalid", full_name="Fixture"
+            )
+        )
         conn.execute(
             insert(sessions).values(
-                owner_id=other_owner,
+                user_id=other_owner,
                 digest=digest(other_token),
                 expires_at=datetime.now(UTC) + timedelta(minutes=1),
             )

@@ -45,3 +45,18 @@ The next development slice uses fixtures and can run locally after the owner sta
 **Release boundary.** No Vercel project or Render service binding is in the checkout. No paid resource or hosted application is part of this phase. The authenticated intake slice contributes to the broader matrix rows. Future work includes database row-level security for hosted tenants, pipeline features, outbox and a real task consumer. The next slice is [the durable local outbox](NEXT_STEP.md). [Ubuntu runbook](../README.md)
 
 **Published checkpoint.** Verified GitHub main contained implementation commit f5998b39fdf91d05b4b01b814286f5d7b25c8281. The Foundation run passed dependency installation, Compose startup, backend tests, contract regeneration, frontend checks, build and real browser round trip. GitHub reported zero deployments for that SHA. Additional local smoke verified keyboard sign-in, skip navigation and no horizontal overflow at a 375px viewport. [Passing CI run](https://github.com/saisamay/JODY--Job-Applying-Buddy/actions/runs/45109350483)
+
+## Phase 1B · Secure data foundation · 2026-11-23
+
+Started from verified main revision 31809c9408aba9b6c83960af66bfab587a9858a7. Applied Alembic 0002_secure_data to the local PostgreSQL 16 database after taking a private backup. The job count matched before and after upgrade. Alembic reports head and no metadata drift.
+
+| Scope | Verified result |
+|---|---|
+| Storage | 24 application tables cover the requested PRD domains. All 22 tenant-owned tables have a required user_id. Users is the identity root and system_control is installation-wide. All five PRD enums match the printed labels and order. Disposable migration tests preserve legacy identities, sessions, jobs, observations and events. |
+| Authorization | Private owner login, active/expiry checks and session revocation protect versioned routes. The application uses a separate restricted database login. Row policies and composite foreign keys enforce tenant scope. No signup endpoint exists. |
+| Secrets and controls | AES-256-GCM encrypts credentials with fresh nonces and user/provider binding. Profile and audit responses omit secrets. Settings default to disabled outbound, Trash and archive. The operator can pause or resume tasks from the dashboard. |
+| Retries and audit | Concurrent commands with the same key commit once. Reusing a key for different input returns 409. Replaying an old resume receipt leaves a later pause intact. The runtime role cannot mutate existing audit events. |
+| Worker | One-shot local probe uses a durable PostgreSQL pending row and a Redis UUID. Tests cover queue loss and republication, duplicate delivery, pause at dispatch and concurrent pause fencing. Real provider dispatch is disabled. |
+| Regression checks | 18 pytest tests passed with a migrated disposable database and real Redis. Ruff lint/format, strict mypy, OpenAPI regeneration, ESLint, TypeScript, Prettier and optimized Next build passed. Headless Chrome passed login, task resume/pause, manual intake, retry, reload and sign-out on the live local stack. |
+
+**Checkpoint evidence.** Local readiness reported PostgreSQL and Redis healthy. The owner-selected defaults were restored after the smoke test. No credentials or private backup were staged. The phase report records the pushed SHA, CI run and hosting disposition. Cloud targets, public signup, automated key rotation and live provider permissions remain future work. [Next slice](NEXT_STEP.md)

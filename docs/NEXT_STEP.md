@@ -1,11 +1,9 @@
 # JODY next step
 
-**Phase 1B: build and verify the durable local task outbox.** The first slice should process one inert synthetic task from a transaction through Redis to a persisted completion. The current worker probe verifies connectivity. It does not consume work.
+**Phase 2A: import and review synthetic GitHub project evidence locally.** Begin with the current github_projects table and user-scoped access pattern. Use reviewed repository snapshots supplied as fixtures, including a commit, path and attribution. Keep live sync, generated resumes and delivery disabled.
 
-1. Read the [latest checkpoint](PROGRESS.md), [build contract](BUILD_CONTRACT.md) and T04/S03 in the [matrix](REQUIREMENTS_MATRIX.md). Compare local HEAD to origin/main and preserve any unrelated changes.
-2. Add an additive Alembic migration for owner-scoped tasks and outbox records. Commit the domain record and outbox item in one transaction, with a unique operation key.
-3. Implement a Python relay and a separately runnable worker. Use Redis only for task references. Persist claims, attempts and terminal results in PostgreSQL.
-4. Demonstrate duplicate delivery, worker restart, Redis loss/rebuild, owner isolation and global pause on a synthetic action. Keep all provider effects disabled.
-5. Re-run phase 1A regression checks from the [Ubuntu runbook](../README.md), record test evidence and remaining acceptance criteria, then follow the commit/push/verify/deployment checkpoint.
-
-The local workspace, API and typed contracts are already present. Future hosted operation still requires owner-approved resources and provider targets.
+1. Compare HEAD to origin/main, read the latest [progress](PROGRESS.md), and review F06, I01 and S01 in the [requirements matrix](REQUIREMENTS_MATRIX.md).
+2. Add the minimum migration for versioned evidence items and explicit owner review. Link each item to the project with a tenant-aware foreign key.
+3. Provide an authenticated local import and review path. Repeated imports of the same snapshot must preserve one revision. Unsupported metrics and unverifiable skill claims must remain unapproved.
+4. Demonstrate provenance, revocation and second-tenant denial through the normal API. Run the existing migration, pause, isolation and browser tests from the [runbook](../README.md).
+5. Update the ledgers, commit and push normally, verify the remote revision, CI and deployment disposition, and report the next slice.

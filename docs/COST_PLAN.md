@@ -23,3 +23,5 @@ Track job imports, dedupe rate, GitHub bytes/requests, changed chunks embedded, 
 - Preserve a failing fixture and the shortest reproducer. Repeated identical failures call for diagnosis or a recorded blocker. Avoid full-repo regeneration, paid model evaluation and repeated cloud deployments.
 - Before credit exhaustion, record last passing commit, dirty paths, test command/outcome, outstanding risk and one next command in the ledgers. Keep partial work identified. Only commit/push a passing slice as a completed checkpoint.
 - Resume by reconciling HEAD, remote and working tree with the checkpoint. Reuse proven tests, fixtures and decisions. Keep credentials, raw PDFs, mailbox payloads and private evidence out of handoff notes.
+
+Phase 1B uses local PostgreSQL cryptographic ciphertext storage, application-side encryption and the existing Redis broker. The data foundation introduces no new hosted service or paid API dependency.

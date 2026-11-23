@@ -44,7 +44,7 @@ Retain the source stage vocabulary for Kanban. Store job disposition, applicatio
 
 ## Relational design
 
-Every tenant-owned table carries a non-null ownership key. Phase 1A calls this column owner_id and uses owners as the private identity root. Below, user_id and users name the logical owner and eventual profile. The users row is the ownership root. Use UUIDs, UTC timestamptz, foreign keys, score checks (0–100), constrained statuses, unique (user_id, id) parents and composite tenant-aware foreign keys. Put owner scope in indexes, vector queries, queue keys, artifact namespaces and caches. Use row-level security with transaction-local identity, a runtime role without bypass privileges, and a separate migration role. Workers load scope from the persisted task. Public signup later adds identities and policies without changing the ownership key.
+Every tenant-owned table carries a non-null ownership key. Migration 0002 renames phase 1A owner_id and owners to user_id and users in place. The users row is the ownership root. Use UUIDs, UTC timestamptz, foreign keys, score checks (0–100), constrained statuses, unique (user_id, id) parents and composite tenant-aware foreign keys. Put owner scope in indexes, vector queries, queue keys, artifact namespaces and caches. Use row-level security with transaction-local identity, a runtime role without bypass privileges, and a separate migration role. Workers load scope from the persisted task. Public signup later adds identities and policies without changing the ownership key.
 
 | Tables | Contents and invariants |
 |---|---|
@@ -120,3 +120,11 @@ For external effects, serialize the transition to dispatching with pause/revocat
 | Indefinite evidence, mail and artifact retention | Proposed private defaults: minimize source text, retain generated packets until owner deletion, purge temporary inputs after processing. Keep redacted audit metadata, with separate key destruction for sensitive snapshots. | Owner selects exact retention, backup expiry, residency and restore targets before using real data in hosted services. |
 | Availability and budget unknown | Laptop-only execution initially. An always-on worker, durable storage, backups and monitoring require a funded hosted design. | Approved monthly ceiling, Vercel/Render targets, recovery objectives and tested restore. |
 | PDF DDL truncated; tenancy and provider delivery under-specified | Design above adds composite keys, row policies, idempotency, receipts and explicit ambiguity. | Migration, cross-tenant, restart and fault-injection tests before release. |
+
+## Implemented private data boundary · phase 1B
+
+The physical schema is in apps/api/migrations/sql/0002_upgrade.sql and the SQLAlchemy metadata. The five native PostgreSQL enums preserve the PRD labels and order. Identity is in users, candidate fields and profile_vault_json in candidate_profiles, and typed preferences in user_settings. The profile API projects settings_json with the installation-wide pause flag. Encrypted credentials and credentials_iv reside on the matching integration connection. Each tenant resource has a required user_id. The users identity root and singleton system_control are the two exceptions to tenant ownership.
+
+PostgreSQL applies row policies to every tenant table. Authentication resolves a digest through one fixed-search-path database function that checks expiry and active status. The private API role cannot create users or change schema. Composite keys enforce ownership on relationships even during maintenance writes. Session and business mutations append redacted audit records. Idempotency receipts, their keyed payload digest, the domain write and its audit record commit together.
+
+The private worker currently handles only local_probe. The pending task row serves as its outbox. Redis transports the UUID, PostgreSQL decides eligibility and records completion. The global pause row serializes worker dispatch and control updates. A database trigger also rejects prohibited task status transitions. Provider dispatch, approval consumption, billing, public signup and hosted tenancy qualification remain later milestones.

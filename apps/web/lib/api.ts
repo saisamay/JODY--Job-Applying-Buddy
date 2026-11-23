@@ -16,9 +16,11 @@ async function fetchApi(
   method = "GET",
   token?: string,
   body?: unknown,
+  key?: string,
 ): Promise<Response> {
   const headers = new Headers();
   if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (key) headers.set("Idempotency-Key", key);
   if (body) headers.set("Content-Type", "application/json");
   let response: Response;
   try {
@@ -55,6 +57,16 @@ async function request<T>(...args: Parameters<typeof fetchApi>): Promise<T> {
 }
 
 export const api = {
+  gate: (token: string) =>
+    request<Schema["Pause"]>("/api/v1/system/kill-switch", "GET", token),
+  setGate: (token: string, paused: boolean, key: string) =>
+    request<Schema["Pause"]>(
+      "/api/v1/system/kill-switch",
+      "POST",
+      token,
+      { paused },
+      key,
+    ),
   ready: () => request<Schema["Ready"]>("/health/ready"),
   login: (body: Schema["Login"]) =>
     request<Schema["SessionToken"]>("/api/v1/session", "POST", undefined, body),

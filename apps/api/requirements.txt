@@ -4,3 +4,5 @@ psycopg[binary]==3.3.9
 redis==7.4.1
 SQLAlchemy==2.1.9
 uvicorn==0.54.0
+cryptography==50.0.2
+pgvector==0.5.1

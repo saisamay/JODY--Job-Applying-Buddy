@@ -1,6 +1,12 @@
+import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { ApiError, api, type SavedJob } from "../lib/api";
-import { IntakeForm, LoginForm, LogoutForm } from "../components/forms";
+import {
+  IntakeForm,
+  LoginForm,
+  LogoutForm,
+  PauseForm,
+} from "../components/forms";
 
 export const dynamic = "force-dynamic";
 
@@ -50,10 +56,16 @@ export default async function Home() {
     .then((result) => result.status === "ready")
     .catch(() => false);
   let jobs: SavedJob[] | undefined;
+  let paused: boolean | undefined;
   let problem = "";
   if (token) {
     try {
-      jobs = await api.jobs(token);
+      const [items, gate] = await Promise.all([
+        api.jobs(token),
+        api.gate(token),
+      ]);
+      jobs = items;
+      paused = gate.paused;
     } catch (error) {
       if (!(error instanceof ApiError && error.status === 401))
         problem = "Saved jobs are unavailable. Refresh after the API recovers.";
@@ -93,6 +105,9 @@ export default async function Home() {
           </div>
         </div>
         <div className="frame workspace">
+          {paused !== undefined && (
+            <PauseForm paused={paused} command={randomUUID()} />
+          )}
           {problem ? (
             <p role="alert" className="panel">
               {problem}

@@ -1,6 +1,6 @@
 # JODY build contract
 
-JODY — Your AI Job Applying Buddy helps one person find legitimate jobs and prepare truthful applications. The owner controls which facts leave the system, who receives them, and when. Public SaaS is a later release. Phase 0 covered planning. The owner subsequently authorized a local Next.js and FastAPI foundation with manual intake. External job automation remains outside this phase.
+JODY — Your AI Job Applying Buddy helps one person find legitimate jobs and prepare truthful applications. The owner controls which facts leave the system, who receives them, and when. Public SaaS is a later release. Phase 0 covered planning. The owner subsequently authorized a local Next.js and FastAPI foundation with manual intake. The subsequent secure-data phase authorizes local schema, auth, controls and inert task probes. External job automation remains outside this phase.
 
 ## Authority and source
 

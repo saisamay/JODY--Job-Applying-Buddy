@@ -31,3 +31,5 @@ An ID can span phases. For example F11 has a reviewable local email packet in ph
 1A has one user-visible result. The authenticated owner pastes a synthetic job, reloads the page and sees it in their pipeline. Proposed paths are apps/web, apps/api, packages/shared and apps/api/migrations. Phase 1A adds a broker probe in apps/worker. Introduce a durable consumer in 1B. Use PostgreSQL with a volume, a closed owner session, one migration and a fake second owner in tests. Leave provider adapters unplugged. [Next step](NEXT_STEP.md)
 
 At every exit follow the [build contract](BUILD_CONTRACT.md), publish the verified commit and preserve the last passing slice. Validate cloud access only when its phase needs it.
+
+Phase 1B delivers the tenant schema, runtime isolation, encrypted connections, default-off policies, dashboard pause and a durable local probe. Use phase 2A to review synthetic GitHub evidence before any live sync or document generation. Production leases, dead-letter handling and uncertain external-effect reconciliation still belong to their provider phases.
