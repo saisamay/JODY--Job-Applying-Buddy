@@ -25,3 +25,21 @@ Use `git log -1 --format='%H %s' -- docs/PROGRESS.md` to identify the commit con
 ## Outstanding gates
 
 The next development slice uses fixtures and can run locally after the owner starts implementation. Real candidate evidence, resume template, provider entitlements, retention choices and hosting budget belong to later gates. Hosting requires an identified Vercel project and confirmed Render workspace/service mapping with deployment read/trigger access. Any billable addition needs a separately approved estimate. [Next action](NEXT_STEP.md)
+
+## Phase 1A · Local foundation and manual intake · 2026-11-23
+
+**Starting revision** was aea642122d4b0ccb90b4fa4de322c8999283b647 on main. The owner selected FastAPI, SQLAlchemy and Alembic for the backend. This supersedes the provisional Node backend choice in phase 0.
+
+| Area | Delivered and observed locally |
+|---|---|
+| Workspace | Next.js App Router, TypeScript, Tailwind, labeled sign-in and intake forms, keyboard focus, accessible feedback and saved jobs list. Next server actions call FastAPI using types generated from its OpenAPI document. |
+| API and persistence | Closed owner login with expiring hashed sessions, scoped reads and atomic manual intake. Owner, job, observation and event writes use a PostgreSQL migration. Concurrent identical requests produce one job, observation and event. |
+| Infrastructure | PostgreSQL 16 with vector, Redis-compatible broker, Alembic, structured request logs, sanitized errors, live and ready probes. A worker command checks the broker. No job automation or external providers were enabled. |
+| Developer workflow | Local-only environment template and initializer, dependency locks, lint/format/type settings, Ubuntu startup script and runbook, GitHub Actions workflow with Compose and browser smoke. |
+| Database tests | Real pgvector distance query, migration upgrade/check/downgrade/upgrade, dependency-failure readiness, invalid inputs, session revocation on sign-out, concurrent intake, cross-owner denial and fresh API lifespan persistence. Nine pytest tests passed. |
+| Browser tests | Headless Chrome passed owner login, save, reload, duplicate retry and sign-out through the actual frontend and API. Passed once against the optimized build and again against the development server after restarting both processes with the same database. |
+| Other gates | Ruff lint/format, strict mypy, ESLint, Prettier, TypeScript, OpenAPI type generation and optimized Next build. Exact commands are in the runbook and CI workflow. |
+
+**Local environment difference.** Docker Compose configuration validation passed. The local account lacks permission to open the Docker socket. Equivalent user-owned PostgreSQL 16, pgvector and Redis 7 processes supplied the live services on loopback ports 55432 and 56379. The local stack uses synthetic data and a generated private .env. The CI workflow exercises the Compose container path. Report the remote result against the pushed commit.
+
+**Release boundary.** No Vercel project or Render service binding is in the checkout. No paid resource or hosted application is part of this phase. The authenticated intake slice contributes to the broader matrix rows. Future work includes database row-level security for hosted tenants, pipeline features, outbox and a real task consumer. The next slice is [the durable local outbox](NEXT_STEP.md). [Ubuntu runbook](../README.md)

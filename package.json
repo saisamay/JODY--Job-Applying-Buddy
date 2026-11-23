@@ -1,0 +1,23 @@
+{
+  "name": "jody",
+  "private": true,
+  "workspaces": ["apps/web"],
+  "engines": {"node": ">=22.13"},
+  "scripts": {
+    "dev": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "start": "npm run start -w apps/web",
+    "lint": "eslint apps/web",
+    "typecheck": "npm run typecheck -w apps/web",
+    "format:check": "prettier --check apps/web packages/shared tests/*.mjs",
+    "contracts": "python -m jody.schema | openapi-typescript -o packages/shared/api.d.ts && prettier --write packages/shared/api.d.ts",
+    "test:browser": "node --test tests/browser.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "16.4.6",
+    "openapi-typescript": "^7.9.1",
+    "prettier": "^3.6.2"
+  }
+}

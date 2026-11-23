@@ -5,16 +5,16 @@
 ## Components and trust boundaries
 
 ```text
-Owner browser → Next.js dashboard → same-origin API proxy → Node.js /api/v1
+Owner browser → Next.js dashboard → same-origin API proxy → Python FastAPI /api/v1
 Paired Telegram callback → authenticated webhook adapter → command handlers
 Command handlers → PostgreSQL 16 + pgvector (domain records, approvals, outbox)
-Outbox relay → Redis queue → Node.js workers → evidence / scoring / preparation
+Outbox relay → Redis queue → Python workers → evidence / scoring / preparation
                                           ↘ isolated Tectonic → private artifact store
 Approved action → dispatch worker → policy recheck → provider → receipt / reconciliation
 Inbound provider event → verified adapter → normalize + correlate → timeline / alert
 ```
 
-Use a TypeScript modular monolith with separate API, worker and scheduler entry points. Share input schemas, transitions and policy checks. A Python subprocess/service may later implement ranking or evaluation behind the same versioned interface if benchmarks justify it. Local Compose runs Postgres, Redis and app processes on loopback with persistent volumes. A private local directory holds artifacts by content hash. Production uses Vercel for web, Render for API and continuously running workers, private DB/queue connections and private durable object storage. Never persist artifacts on ephemeral service disks. Previews use synthetic tenants, fake providers and separate credentials. Production integrations live only behind the API and workers.
+The owner selected FastAPI, SQLAlchemy and Alembic for phase 1. Use a Python API and separate future Python worker and scheduler entry points. Share typed contracts by generating TypeScript from FastAPI OpenAPI. Local Compose provides Postgres and Redis with persistent volumes. API and web processes run on loopback on the host. A private local directory holds artifacts by content hash. Production uses Vercel for web, Render for API and continuously running workers, private DB/queue connections and private durable object storage. Never persist artifacts on ephemeral service disks. Previews use synthetic tenants, fake providers and separate credentials. Production integrations live only behind the API and workers.
 
 ## Frontend
 
@@ -44,7 +44,7 @@ Retain the source stage vocabulary for Kanban. Store job disposition, applicatio
 
 ## Relational design
 
-Every tenant-owned table has a non-null user_id. The users row is the ownership root. Use UUIDs, UTC timestamptz, foreign keys, score checks (0–100), constrained statuses, unique (user_id, id) parents and composite tenant-aware foreign keys. Put owner scope in indexes, vector queries, queue keys, artifact namespaces and caches. Use row-level security with transaction-local identity, a runtime role without bypass privileges, and a separate migration role. Workers load scope from the persisted task. Public signup later adds identities and policies without changing the ownership key.
+Every tenant-owned table carries a non-null ownership key. Phase 1A calls this column owner_id and uses owners as the private identity root. Below, user_id and users name the logical owner and eventual profile. The users row is the ownership root. Use UUIDs, UTC timestamptz, foreign keys, score checks (0–100), constrained statuses, unique (user_id, id) parents and composite tenant-aware foreign keys. Put owner scope in indexes, vector queries, queue keys, artifact namespaces and caches. Use row-level security with transaction-local identity, a runtime role without bypass privileges, and a separate migration role. Workers load scope from the persisted task. Public signup later adds identities and policies without changing the ownership key.
 
 | Tables | Contents and invariants |
 |---|---|
@@ -71,7 +71,7 @@ Page 6 supplies complete definitions only for the enums and users, plus the star
 
 ## HTTP boundary
 
-All application routes below have prefix `/api/v1`. The dashboard authenticates with an HTTP-only, Secure hosted cookie and CSRF/origin checks on mutations. The API validates short-lived audience-bound tokens from the trusted server-side web layer, or a scoped copilot token. Never trust a user_id header from a browser. The external Telegram ingress authenticates the provider and verifies the bound owner separately. Filter queries paginate by cursor. Enforce payload size, validated URLs and allowlisted setting names. Use 202 plus task ID for async operations, 403 for insufficient scope, 404 for foreign resources, 409 for stale versions or conflicting idempotency keys and 422 for invalid inputs.
+All application routes below have prefix `/api/v1`. The dashboard authenticates with an HTTP-only, Secure hosted cookie and CSRF/origin checks on mutations. In the local slice the API issues eight-hour opaque bearer sessions on proof of the owner key. Next.js keeps them in HTTP-only same-site cookies and forwards them server-side. Scoped copilot tokens and hosted identity are future work. Never trust a user_id header from a browser. The external Telegram ingress authenticates the provider and verifies the bound owner separately. Filter queries paginate by cursor. Enforce payload size, validated URLs and allowlisted setting names. Use 202 plus task ID for async operations, 403 for insufficient scope, 404 for foreign resources, 409 for stale versions or conflicting idempotency keys and 422 for invalid inputs.
 
 | Route (PRD p7 unless indicated) | Contract and authorization |
 |---|---|

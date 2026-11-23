@@ -1,0 +1,63 @@
+name: Foundation
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      PYTHONPATH: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install locked dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r requirements-dev.lock
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          npm ci --no-fund --no-audit
+      - name: Start local data services
+        run: |
+          python infra/init-env.py
+          docker compose --env-file .env -f infra/compose.yaml up -d --wait
+      - name: Check Python and run integration tests
+        run: |
+          set -a; source .env; set +a
+          ruff check apps/api apps/worker tests infra
+          ruff format --check apps/api apps/worker tests infra
+          mypy
+          pytest
+      - name: Verify API contracts and frontend
+        run: |
+          npm run contracts
+          git diff --exit-code -- packages/shared/api.d.ts
+          npm run lint
+          npm run typecheck
+          npm run format:check
+          npm run build
+      - name: Browser round trip
+        run: |
+          npx playwright install --with-deps chromium
+          JODY_WEB_MODE=start ./infra/run-local.sh > "$RUNNER_TEMP/jody-stack.log" 2>&1 &
+          stack_pid=$!
+          trap 'kill "$stack_pid" 2>/dev/null || true' EXIT
+          curl -fsS --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:3000/ -o /dev/null
+          set -a; source .env; set +a
+          npm run test:browser
+      - name: Show service startup diagnostics on failure
+        if: failure()
+        run: |
+          docker compose --env-file .env -f infra/compose.yaml ps
+          if test -f "$RUNNER_TEMP/jody-stack.log"; then tail -60 "$RUNNER_TEMP/jody-stack.log"; fi

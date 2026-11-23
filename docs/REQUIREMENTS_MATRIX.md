@@ -2,15 +2,15 @@
 
 Each row has a permanent ID. Source references use the printed PDF page and section. **Owner** denotes the accompanying build instructions and **Design** denotes a control added to make a source requirement testable. Rows retain the original request when a delivery mechanism changes. Phase exits and fixtures are defined in the [roadmap](ROADMAP.md).
 
-**Priority** P0 protects the user or enables the private MVP, P1 completes the private production workflow, P2 supports optional adapters or public SaaS. **Status** Planned means implementation is outstanding. Adapted means the source intent has a safer planned implementation. Deferred means work is assigned to a later phase or access gate. Documented applies only to planning artifacts. None of these statuses means an application feature has passed a test.
+**Priority** P0 protects the user or enables the private MVP, P1 completes the private production workflow, P2 supports optional adapters or public SaaS. **Status** Planned means implementation is outstanding. Adapted means the source intent has a safer planned implementation. Deferred means work is assigned to a later phase or access gate. Documented applies only to planning artifacts. **Partial** denotes a tested subset with outstanding criteria. **Tested** requires the entire row to pass. Current evidence and limits are in PROGRESS.md.
 
 ## Functional requirements
 
 | ID | Source | Priority | Requirement and disposition | Acceptance criterion | Status |
 |---|---|---|---|---|---|
-| F01 | pp1–3 §§1–4.1 | P0 | Discover jobs from multiple channels and manual links or text. | Manual text and URL create owner-scoped opportunities. A supplied WhatsApp or LinkedIn item retains its group, feed or post source type and permission basis. | Planned |
+| F01 | pp1–3 §§1–4.1 | P0 | Discover jobs from multiple channels and manual links or text. | Manual text and URL create owner-scoped opportunities. A supplied WhatsApp or LinkedIn item retains its group, feed or post source type and permission basis. | Partial |
 | F02 | p3 §4.1 | P0 | Extract role, employer, location, remote flag, application URL and HR/recruiter email. | Fixture yields all present fields with provenance and unknowns for missing fields. | Planned |
-| F03 | p3 §4.1 | P0 | Normalize and deduplicate across sources. | Concurrent imports of one requisition yield one job, two sightings and one application intent. Similar roles with distinct requisitions remain separate. | Planned |
+| F03 | p3 §4.1 | P0 | Normalize and deduplicate across sources. | Concurrent imports of one requisition yield one job, two sightings and one application intent. Similar roles with distinct requisitions remain separate. | Partial |
 | F04 | p3 §4.2 | P0 | Assess legitimacy before tailoring or sharing details. | Record 0–100, flags, evidence and check time for domain age, recruiter/site domain alignment including free webmail, authorized LinkedIn company/recruiter evidence, fee/deposit/security-payment language and off-platform demands. Unavailable signals remain unknown. | Planned |
 | F05 | pp1–3 §§1,4.2 | P0 | Route trusted, doubtful and scam jobs. | At default 80, high trust may start preparation. Borderline or insufficient evidence shows score and flags for approve/skip/block. Confirmed scam blocks dispatch, updates blocklist and proposes matching inbox cleanup. | Adapted |
 | F06 | p3 §4.3 | P0 | Select real projects relevant to the job description. | Ranked results show supporting passages, source revision and unmet requirements. Cross-owner and unverified claims are excluded. | Planned |
@@ -26,22 +26,22 @@ Each row has a permanent ID. Source references use the printed PDF page and sect
 | F16 | pp2,4 §§3,4.6; p6 §6 | P1 | Classify incoming mail and update Kanban. | Fixtures cover acknowledgment, assessment, shortlist/interview, offer, rejection, scam/spam and unrelated. Link using message/thread and job evidence. Ambiguity goes to review and late mail cannot silently regress an offer. | Planned |
 | F17 | pp2,4 §§2,4.6–7 | P1 | Notify owner of applications, doubtful companies, shortlists, assessments and interviews. | Each qualifying event queues one opted-in mobile alert after commit. Show time, delivery outcome and retry or dashboard fallback. | Planned |
 | F18 | pp1–2,4 §§1–2,4.6 | P1 | Reversible inbox hygiene. | Confirmed scam can be labeled/trashed. Rejection can be labeled/archived or explicitly trashed per settings. Undo restores prior labels where available and records outcome. Ambiguous mail stays untouched. | Adapted |
-| F19 | pp2,4 §§3,4.7 | P0 | Live pipeline and operator controls. | Board updates after persisted events, filters by status/trust, opens evidence and artifacts, shows sync health, rule controls, pause state and chronological audit of outreach and mail changes. | Planned |
+| F19 | pp2,4 §§3,4.7 | P0 | Live pipeline and operator controls. | Board updates after persisted events, filters by status/trust, opens evidence and artifacts, shows sync health, rule controls, pause state and chronological audit of outreach and mail changes. | Partial |
 | F20 | p4 §§4.7–8 | P2 | Guided SaaS onboarding. | New tenant can enter profile manually or import GitHub, see requested permissions, opt in per channel, revoke access and complete an isolated first job. | Deferred |
 
 ## Technical requirements
 
 | ID | Source | Priority | Requirement and disposition | Acceptance criterion | Status |
 |---|---|---|---|---|---|
-| T01 | pp2,4 §§3,5; Owner | P0 | Next.js, TypeScript and Tailwind dashboard, mobile and keyboard access. | Build passes. Board and approval flow work by keyboard and narrow viewport. Figma-derived hierarchy and controls use JODY content. | Planned |
-| T02 | pp2,4–5 §§3,5 | P0 | Separate API and worker lifecycles. Node.js owns workflow. Python is an optional specialist process. | Closing the dashboard leaves an enqueued job running. A worker restart recovers it. Services communicate through versioned contracts. | Adapted |
-| T03 | pp2,4–6 §§3,5–6 | P0 | PostgreSQL 16, pgvector and relational constraints. | Clean migrations and upgrade fixture provide UUIDs, owned keys, validated scores/statuses and vector search. Verify extension availability. Source lists uuid-ossp, pgcrypto and vector. | Planned |
+| T01 | pp2,4 §§3,5; Owner | P0 | Next.js, TypeScript and Tailwind dashboard, mobile and keyboard access. | Build passes. Board and approval flow work by keyboard and narrow viewport. Figma-derived hierarchy and controls use JODY content. | Partial |
+| T02 | pp2,4–5 §§3,5 | P0 | Separate API and worker lifecycles. The owner selected FastAPI and Python workers for the implementation. | Closing the dashboard leaves an enqueued job running. A worker restart recovers it. Services communicate through versioned contracts. | Partial |
+| T03 | pp2,4–6 §§3,5–6 | P0 | PostgreSQL 16, pgvector and relational constraints. | Clean migrations and upgrade fixture provide UUIDs, owned keys, validated scores/statuses and vector search. Verify extension availability. Source lists uuid-ossp, pgcrypto and vector. | Partial |
 | T04 | pp2,4,8 §§3,5,8 | P0 | Redis work queue and durable recovery. | DB commit plus outbox survives Redis loss. Duplicate task, lost lease and process crash cannot repeat a confirmed action. Dead letters and replay are visible. | Planned |
-| T05 | pp5–6 §6 | P0 | User/profile vault and settings. | Store unique email, name, GitHub handle, LinkedIn/portfolio URLs, unique Telegram binding, repo/branch (main default), template, vault, settings, active flag, UUID and timestamps. Validate typed updates. Separate secret envelopes. | Adapted |
+| T05 | pp5–6 §6 | P0 | User/profile vault and settings. | Store unique email, name, GitHub handle, LinkedIn/portfolio URLs, unique Telegram binding, repo/branch (main default), template, vault, settings, active flag, UUID and timestamps. Validate typed updates. Separate secret envelopes. | Partial |
 | T06 | p6 §6 | P0 | Represent the specified source, job, application method, outreach and email vocabularies. | Round-trip every value listed in the architecture. Dashboard distinguishes confirmed application from prepared or approval-pending packet. Unknown values fail validation. | Planned |
 | T07 | pp5–6 §6; p7 §7 | P0 | Preserve threshold, cap and inbox preferences. | Read defaults 80 trust, 82 ATS, 12 connections/day and 20 DMs/day as manual guidance. PRD enables scam Trash/rejection archive and starts unpaused. First run instead starts paused with mailbox writes opt-in. | Adapted |
 | T08 | pp2–3 §§3,4.3 | P1 | GitHub semantic retrieval with versioned embeddings. | Golden job finds an expected project. Changed commit refreshes affected chunks, revoked repo disappears from retrieval. Lexical mode works offline. | Planned |
-| T09 | p7 §7 | P0 | Authenticated /api/v1 REST contracts, including extension and callback dispositions. | Contract tests cover every route in the architecture ledger, including disabled routes, tenant derivation, validation, duplicate mutations and stale versions. | Adapted |
+| T09 | p7 §7 | P0 | Authenticated /api/v1 REST contracts, including extension and callback dispositions. | Contract tests cover every route in the architecture ledger, including disabled routes, tenant derivation, validation, duplicate mutations and stale versions. | Partial |
 | T10 | p7 §7; Design | P0 | Artifact access and reproducible evaluations. | Authorized job view returns private PDF access, LaTeX diff, cover letter and ATS breakdown with input hashes and evaluator version. Foreign owner access fails. | Planned |
 
 ## Integration requirements
@@ -66,7 +66,7 @@ Each row has a permanent ID. Source references use the printed PDF page and sect
 | S02 | pp1,4,7–8 §§1,4.7,7–8; Owner | P0 | Explicit approval and attributable audit for external communications. | Store actor, purpose, consent or approval, recipient, content digest, artifact version, time and outcome. Altered, expired or replayed approval cannot dispatch. | Planned |
 | S03 | pp4,6–8 §§4.7,6–8 | P0 | Global pause for outbound work, including extension tasks. | Pause blocks new dispatches at the final gate, tracks already in-flight effects, preserves pending tasks and never silently replays uncertain sends on resume. | Planned |
 | S04 | pp4,6,8 §§4.8,6,8; Owner | P0 | Encrypt OAuth tokens, API keys and sessions, minimize sensitive data. | Per-owner authenticated encryption with separate keys and rotation. Revocation disables jobs. Secret scan and redaction tests pass. Backups and private artifacts are access controlled. | Planned |
-| S05 | pp1,4–7 §§1,4.8,6–7 | P0 | Authenticate private release and derive tenant from session on API, storage, queries, workers and callbacks. | A second test identity cannot access any other owner's row, artifact, cache entry, task or audit. Signup is closed in private mode. | Planned |
+| S05 | pp1,4–7 §§1,4.8,6–7 | P0 | Authenticate private release and derive tenant from session on API, storage, queries, workers and callbacks. | A second test identity cannot access any other owner's row, artifact, cache entry, task or audit. Signup is closed in private mode. | Partial |
 | S06 | pp2,4,7–8 §§2,4.6,7–8 | P1 | Audit and restore all automated inbox changes. | Prior label set and provider message ID survive restart. Repeated restore is safe. Expired Trash or conflicting later edits show a recoverability warning. | Planned |
 | S07 | pp1,3–4 §§2,4.4–5 | P1 | Enforce caps, consent, suppression and bounded follow-up. | Provider limits, owner limits and opted-out recipients suppress queued work at dispatch. Backoff respects provider guidance. Replies cancel pending follow-up. | Adapted |
 | S08 | Design for pp2–3 §§3–4 | P0 | Treat third-party text, links and LaTeX as untrusted. | Host validation, bounded downloads, isolated compiler and escaped fields withstand fixtures containing private URLs, instructions to send, shell syntax and malicious template content. | Planned |
@@ -76,7 +76,7 @@ Each row has a permanent ID. Source references use the printed PDF page and sect
 
 | ID | Source | Priority | Requirement and disposition | Acceptance criterion | Status |
 |---|---|---|---|---|---|
-| D01 | pp1–2,5,8 §§1–3,5,8; Owner | P0 | Local-first development, Docker-compatible processes and private single-user MVP. | Offline fixture path works after dependencies are installed, with one owner and restart persistence. Laptop downtime is reported in health. | Planned |
+| D01 | pp1–2,5,8 §§1–3,5,8; Owner | P0 | Local-first development, Docker-compatible processes and private single-user MVP. | Offline fixture path works after dependencies are installed, with one owner and restart persistence. Laptop downtime is reported in health. | Partial |
 | D02 | pp1–2,5,8 §§1–3,5,8; Owner | P1 | Always-on hosted ingestion, scoring, tailoring, dispatch and inbox workers. Vercel frontend and Render backend. | Against approved resources, close browser and stop local machine. Hosted scheduled work continues, API/worker health checked and mobile event verified. | Deferred |
 | D03 | p8 §8; Owner | P0 | Preserve five source milestones and define smaller resumable phases. | Roadmap crosswalk covers infrastructure/RAG/ATS, ingestion/trust/bot, application/mail, copilot/dashboard, then SaaS, with testable exits. | Documented |
 | D04 | Owner | P0 | Plan only, preserve working code and establish baseline. | Seven named planning files, source fingerprint and inspection record exist. Phase diff contains documentation only. | Documented |
@@ -87,3 +87,14 @@ Each row has a permanent ID. Source references use the printed PDF page and sect
 ## Coverage index
 
 Pages 1–2 introduce the objectives, guardrails and service diagram (F01, F04–F11, F18, T02–T04, I02–I07, S01–S07, D01–D02). Page 3 specifies intake, trust, tailoring and applications (F01–F13). Page 4 adds outreach, inbox, controls, tenancy and the stack (F14–F20, T01–T04, S03–S06, S09). Pages 5–6 specify remaining stack choices, partial DDL, vocabularies and defaults (T03, T05–T08, I02, I05, I07). Page 7 is mapped route by route under T09 in the architecture. Page 8 maps to D03 and the milestone crosswalk, S01–S06 and S09. The [build contract](BUILD_CONTRACT.md) records source precedence and future checkpoint obligations.
+
+## Foundation acceptance supplement
+
+These rows capture the owner's phase 1 foundation instructions. The original product rows above retain their wider release criteria.
+
+| ID | Source | Priority | Requirement and disposition | Acceptance criterion | Status |
+|---|---|---|---|---|---|
+| T11 | Owner, phase 1 | P0 | Typed FastAPI / SQLAlchemy / Alembic and Next.js App Router foundation. | From a clean database, upgrade the schema and verify pgvector, then use the typed client in a browser to sign in, save, reload, retry and sign out. | Tested |
+| T12 | Owner, phase 1 | P0 | Health, readiness, request logging and basic errors. | Reach live/ready endpoints, fail readiness with an offline dependency, capture a request ID and structured request record, return sanitized errors for invalid input. | Tested |
+| D08 | Owner, phase 1 | P0 | Reproducible Ubuntu stack, environment template and Compose services. | Generate private local configuration, start both data services from Compose, migrate and run the complete application. | Partial |
+| D09 | Owner, phase 1 | P0 | Lint, format, type checks, backend and browser tests in GitHub Actions. | Local checks pass and a remote CI run for the same commit passes. See phase report for remote result. | Partial |
