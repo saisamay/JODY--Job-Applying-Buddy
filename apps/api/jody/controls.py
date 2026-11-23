@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
-from sqlalchemy import Connection, delete, insert, select, update
+from sqlalchemy import Connection, delete, func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .routes import Owner
@@ -79,7 +79,24 @@ def profile(request: Request, owner: Owner) -> Result:
         identity = (
             conn.execute(select(users.c.id, users.c.email, users.c.full_name)).mappings().one()
         )
-        candidate = conn.execute(select(profiles)).mappings().one()
+        candidate = (
+            conn.execute(
+                select(
+                    profiles.c.user_id,
+                    profiles.c.github_username,
+                    profiles.c.linkedin_profile_url,
+                    profiles.c.portfolio_url,
+                    profiles.c.telegram_chat_id,
+                    profiles.c.resume_git_repo_url,
+                    profiles.c.resume_master_branch,
+                    profiles.c.master_latex_template,
+                    profiles.c.profile_vault_json,
+                    profiles.c.updated_at,
+                )
+            )
+            .mappings()
+            .one()
+        )
         prefs = dict(conn.execute(select(settings)).mappings().one())
         prefs.pop("user_id")
         prefs["is_system_paused"] = conn.scalar(select(control.c.is_system_paused))
@@ -129,6 +146,25 @@ def preferences(payload: Preferences, request: Request, owner: Owner, key: Key) 
         raise HTTPException(422, "Supply one or more valid settings.")
 
     def change(conn: Connection) -> Result:
+        if {"outbound_enabled", "auto_trash_scams", "auto_archive_rejections"} & values.keys():
+            steps = dict(
+                conn.execute(
+                    select(profiles.c.onboarding_steps)
+                    .where(profiles.c.user_id == owner)
+                    .with_for_update()
+                ).scalar_one()
+            )
+            steps.pop("automation_permissions", None)
+            steps.pop("final_confirmation", None)
+            conn.execute(
+                update(profiles)
+                .where(profiles.c.user_id == owner)
+                .values(
+                    onboarding_steps=steps,
+                    candidate_revision=profiles.c.candidate_revision + 1,
+                    updated_at=func.now(),
+                )
+            )
         conn.execute(update(settings).where(settings.c.user_id == owner).values(**values))
         return values
 

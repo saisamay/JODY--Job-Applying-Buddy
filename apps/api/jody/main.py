@@ -14,6 +14,8 @@ from redis import Redis, RedisError
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+from .candidate import candidate
+from .candidate_resumes import resumes_api
 from .config import redis_url
 from .contracts import Error, Live, Ready
 from .controls import controls
@@ -45,6 +47,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="JODY", version="0.1.0", lifespan=lifespan)
 app.include_router(router)
 app.include_router(controls)
+app.include_router(candidate)
+app.include_router(resumes_api)
 
 
 @app.middleware("http")
@@ -104,7 +108,7 @@ def ready(request: Request, response: Response) -> Ready:
                 conn.scalar(
                     text("""
                 SELECT EXISTS (SELECT FROM pg_extension WHERE extname = 'vector')
-                   AND EXISTS (SELECT FROM alembic_version WHERE version_num = '0002_secure_data')
+                   AND EXISTS (SELECT FROM alembic_version WHERE version_num = '0003_candidate')
             """)
                 )
             )

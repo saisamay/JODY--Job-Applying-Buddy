@@ -17,11 +17,16 @@ async function fetchApi(
   token?: string,
   body?: unknown,
   key?: string,
+  metadata?: Record<string, string>,
 ): Promise<Response> {
-  const headers = new Headers();
+  const headers = new Headers(metadata);
   if (token) headers.set("Authorization", `Bearer ${token}`);
   if (key) headers.set("Idempotency-Key", key);
-  if (body) headers.set("Content-Type", "application/json");
+  if (body)
+    headers.set(
+      "Content-Type",
+      body instanceof Blob ? "application/pdf" : "application/json",
+    );
   let response: Response;
   try {
     response = await fetch(
@@ -29,7 +34,8 @@ async function fetchApi(
       {
         method,
         headers,
-        body: body ? JSON.stringify(body) : undefined,
+        body:
+          body instanceof Blob ? body : body ? JSON.stringify(body) : undefined,
         cache: "no-store",
         signal: AbortSignal.timeout(10000),
       },
@@ -74,4 +80,108 @@ export const api = {
   jobs: (token: string) => request<SavedJob[]>("/api/v1/jobs", "GET", token),
   save: (token: string, body: Schema["ManualJob"]) =>
     request<SavedJob>("/api/v1/jobs/manual", "POST", token, body),
+};
+
+// Server-side client for the onboarding UI. Keep bearer tokens in the server session.
+const candidatePath = "/api/v1/candidate";
+export const candidateApi = {
+  read: (token: string) =>
+    request<Schema["Candidate"]>(candidatePath, "GET", token),
+  edit: (token: string, body: Schema["Edit"], key: string) =>
+    request<Schema["Version"]>(candidatePath, "PATCH", token, body, key),
+  suggest: (token: string, body: Schema["Suggest"], key: string) =>
+    request<Schema["Version"]>(
+      candidatePath + "/suggestions",
+      "PATCH",
+      token,
+      body,
+      key,
+    ),
+  verify: (token: string, body: Schema["Review"], key: string) =>
+    request<Schema["Version"]>(
+      candidatePath + "/review",
+      "POST",
+      token,
+      body,
+      key,
+    ),
+  advance: (token: string, body: Schema["Advance"], key: string) =>
+    request<Schema["Version"]>(
+      candidatePath + "/onboarding",
+      "POST",
+      token,
+      body,
+      key,
+    ),
+  permissions: (
+    token: string,
+    body: Partial<Schema["Permissions"]>,
+    key: string,
+  ) =>
+    request<Partial<Schema["Permissions"]>>(
+      "/api/v1/profile/settings",
+      "PATCH",
+      token,
+      body,
+      key,
+    ),
+  preview: (token: string, body: Schema["PreviewRequest"]) =>
+    request<Schema["Preview"]>(
+      candidatePath + "/application-preview",
+      "POST",
+      token,
+      body,
+    ),
+  upload: (
+    token: string,
+    pdf: Blob,
+    label: string,
+    role: string | null,
+    revision: number,
+    key: string,
+  ) => {
+    const metadata: Record<string, string> = {
+      "X-Resume-Label": encodeURIComponent(label),
+    };
+    if (role) metadata["X-Resume-Role"] = encodeURIComponent(role);
+    return request<Schema["Uploaded"]>(
+      candidatePath + "/resumes?revision=" + revision,
+      "POST",
+      token,
+      pdf,
+      key,
+      metadata,
+    );
+  },
+  download: (token: string, id: string) =>
+    fetchApi(
+      candidatePath + "/resumes/" + encodeURIComponent(id),
+      "GET",
+      token,
+    ),
+  editResume: (
+    token: string,
+    id: string,
+    body: Schema["ResumeEdit"],
+    key: string,
+  ) =>
+    request<Schema["Version"]>(
+      candidatePath + "/resumes/" + encodeURIComponent(id),
+      "PATCH",
+      token,
+      body,
+      key,
+    ),
+  removeResume: (token: string, id: string, revision: number, key: string) =>
+    request<Schema["Version"]>(
+      candidatePath +
+        "/resumes/" +
+        encodeURIComponent(id) +
+        "?revision=" +
+        revision,
+      "DELETE",
+      token,
+      undefined,
+      key,
+    ),
 };

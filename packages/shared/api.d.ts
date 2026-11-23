@@ -194,6 +194,128 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/candidate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Candidate */
+    get: operations["get_candidate_api_v1_candidate_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Edit */
+    patch: operations["edit_api_v1_candidate_patch"];
+    trace?: never;
+  };
+  "/api/v1/candidate/suggestions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Suggest */
+    patch: operations["suggest_api_v1_candidate_suggestions_patch"];
+    trace?: never;
+  };
+  "/api/v1/candidate/review": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Review */
+    post: operations["review_api_v1_candidate_review_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/candidate/onboarding": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Advance */
+    post: operations["advance_api_v1_candidate_onboarding_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/candidate/application-preview": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Preview */
+    post: operations["preview_api_v1_candidate_application_preview_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/candidate/resumes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Upload */
+    post: operations["upload_api_v1_candidate_resumes_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/candidate/resumes/{resume_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Download */
+    get: operations["download_api_v1_candidate_resumes__resume_id__get"];
+    put?: never;
+    post?: never;
+    /** Remove */
+    delete: operations["remove_api_v1_candidate_resumes__resume_id__delete"];
+    options?: never;
+    head?: never;
+    /** Edit Resume */
+    patch: operations["edit_resume_api_v1_candidate_resumes__resume_id__patch"];
+    trace?: never;
+  };
   "/health/live": {
     parameters: {
       query?: never;
@@ -232,10 +354,106 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /** Advance */
+    Advance: {
+      /** Revision */
+      revision: number;
+      step: components["schemas"]["Step"];
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "completed" | "skipped";
+    };
+    /** Candidate */
+    Candidate: {
+      /** Revision */
+      revision: number;
+      fields: components["schemas"]["Fields"];
+      /** Provenance */
+      provenance: {
+        [key: string]: components["schemas"]["Provenance"];
+      };
+      suggestions: components["schemas"]["Fields"];
+      /** Suggestion Origins */
+      suggestion_origins: {
+        [key: string]: "user_provided" | "inferred";
+      };
+      /** Resumes */
+      resumes: components["schemas"]["ResumeInfo"][];
+      permissions: components["schemas"]["Permissions"];
+      /** Steps */
+      steps: components["schemas"]["StepView"][];
+      /** Confirmed */
+      confirmed: boolean;
+    };
+    /** Edit */
+    Edit: {
+      /** Revision */
+      revision: number;
+      fields: components["schemas"]["Fields"];
+    };
+    /** Education */
+    Education: {
+      /** Institution */
+      institution: string;
+      /** Program */
+      program?: string | null;
+      /** Details */
+      details?: string | null;
+    };
     /** Error */
     Error: {
       /** Detail */
       detail: string;
+    };
+    /** Experience */
+    Experience: {
+      /** Organization */
+      organization: string;
+      /** Role */
+      role: string;
+      /** Details */
+      details?: string | null;
+    };
+    /** Fields */
+    Fields: {
+      /** Full Name */
+      full_name?: string | null;
+      /** Email */
+      email?: string | null;
+      /** Phone */
+      phone?: string | null;
+      /** Education */
+      education?: components["schemas"]["Education"][] | null;
+      /** Work Experience */
+      work_experience?: components["schemas"]["Experience"][] | null;
+      /** Skills */
+      skills?: string[] | null;
+      /** Projects */
+      projects?: components["schemas"]["Project"][] | null;
+      /** Github */
+      github?: string | null;
+      /** Linkedin */
+      linkedin?: string | null;
+      /** Portfolio */
+      portfolio?: string | null;
+      /** Preferred Roles */
+      preferred_roles?: string[] | null;
+      /** Employment Types */
+      employment_types?: string[] | null;
+      /** Preferred Locations */
+      preferred_locations?: string[] | null;
+      /** Work Modes */
+      work_modes?: ("remote" | "hybrid" | "onsite")[] | null;
+      /** Salary Expectations */
+      salary_expectations?: string | null;
+      /** Availability */
+      availability?: string | null;
+      /** Work Authorization */
+      work_authorization?: string | null;
+      /** Application Preferences */
+      application_preferences?: string | null;
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -285,6 +503,15 @@ export interface components {
       /** Paused */
       paused: boolean;
     };
+    /** Permissions */
+    Permissions: {
+      /** Outbound Enabled */
+      outbound_enabled: boolean;
+      /** Auto Archive Rejections */
+      auto_archive_rejections: boolean;
+      /** Auto Trash Scams */
+      auto_trash_scams: boolean;
+    };
     /** Preferences */
     Preferences: {
       /** Min Trust Score Auto Apply */
@@ -302,6 +529,62 @@ export interface components {
       /** Auto Trash Scams */
       auto_trash_scams?: boolean | null;
     };
+    /** Preview */
+    Preview: {
+      /** Answers */
+      answers: {
+        [key: string]: unknown;
+      };
+      /** Clarifications */
+      clarifications: {
+        [key: string]: string;
+      };
+      /** Resume Id */
+      resume_id: string | null;
+      /**
+       * Explicit Submission Approval Required
+       * @default true
+       * @constant
+       */
+      explicit_submission_approval_required: true;
+      /**
+       * Explicit Email Approval Required
+       * @default true
+       * @constant
+       */
+      explicit_email_approval_required: true;
+    };
+    /** PreviewRequest */
+    PreviewRequest: {
+      /** Required Fields */
+      required_fields: string[];
+      /**
+       * Include Portfolio
+       * @default false
+       */
+      include_portfolio: boolean;
+      /** Resume Id */
+      resume_id?: string | null;
+    };
+    /** Project */
+    Project: {
+      /** Name */
+      name: string;
+      /** Description */
+      description?: string | null;
+      /** Url */
+      url?: string | null;
+    };
+    /** Provenance */
+    Provenance: {
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "user_provided" | "verified" | "inferred";
+      /** Evidence */
+      evidence?: string | null;
+    };
     /** Ready */
     Ready: {
       /**
@@ -313,6 +596,43 @@ export interface components {
       postgres: boolean;
       /** Redis */
       redis: boolean;
+    };
+    /** ResumeEdit */
+    ResumeEdit: {
+      /** Revision */
+      revision: number;
+      /** Label */
+      label: string;
+      /** Target Role */
+      target_role?: string | null;
+    };
+    /** ResumeInfo */
+    ResumeInfo: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Label */
+      label: string;
+      /** Target Role */
+      target_role: string | null;
+      /** Byte Size */
+      byte_size: number;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
+    /** Review */
+    Review: {
+      /** Revision */
+      revision: number;
+      /** Field */
+      field: string;
+      /** Evidence */
+      evidence: string;
     };
     /** Secret */
     Secret: {
@@ -329,6 +649,52 @@ export interface components {
       /** Max Age */
       max_age: number;
     };
+    /**
+     * Step
+     * @enum {string}
+     */
+    Step:
+      | "basic_profile"
+      | "education_experience"
+      | "skills_projects"
+      | "github_portfolio"
+      | "resume_upload"
+      | "job_preferences"
+      | "automation_permissions"
+      | "final_confirmation";
+    /** StepView */
+    StepView: {
+      step: components["schemas"]["Step"];
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "pending" | "completed" | "skipped";
+      /** Optional */
+      optional: boolean;
+    };
+    /** Suggest */
+    Suggest: {
+      /** Revision */
+      revision: number;
+      fields: components["schemas"]["Fields"];
+      /**
+       * Origin
+       * @default user_provided
+       * @enum {string}
+       */
+      origin: "user_provided" | "inferred";
+    };
+    /** Uploaded */
+    Uploaded: {
+      /** Revision */
+      revision: number;
+      /**
+       * Resume Id
+       * Format: uuid
+       */
+      resume_id: string;
+    };
     /** ValidationError */
     ValidationError: {
       /** Location */
@@ -341,6 +707,11 @@ export interface components {
       input?: unknown;
       /** Context */
       ctx?: Record<string, never>;
+    };
+    /** Version */
+    Version: {
+      /** Revision */
+      revision: number;
     };
   };
   responses: never;
@@ -830,6 +1201,341 @@ export interface operations {
           "application/json": {
             [key: string]: unknown;
           }[];
+        };
+      };
+    };
+  };
+  get_candidate_api_v1_candidate_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Candidate"];
+        };
+      };
+    };
+  };
+  edit_api_v1_candidate_patch: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Edit"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Version"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  suggest_api_v1_candidate_suggestions_patch: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Suggest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Version"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  review_api_v1_candidate_review_post: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Review"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Version"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  advance_api_v1_candidate_onboarding_post: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Advance"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Version"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  preview_api_v1_candidate_application_preview_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PreviewRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Preview"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  upload_api_v1_candidate_resumes_post: {
+    parameters: {
+      query: {
+        revision: number;
+      };
+      header: {
+        "Idempotency-Key": string;
+        "X-Resume-Label": string;
+        "X-Resume-Role"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/pdf": string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Uploaded"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  download_api_v1_candidate_resumes__resume_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        resume_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/pdf": string;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  remove_api_v1_candidate_resumes__resume_id__delete: {
+    parameters: {
+      query: {
+        revision: number;
+      };
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        resume_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Version"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  edit_resume_api_v1_candidate_resumes__resume_id__patch: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        resume_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ResumeEdit"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Version"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

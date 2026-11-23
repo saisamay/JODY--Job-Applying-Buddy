@@ -27,6 +27,10 @@ def provision() -> None:
             raise ValueError("Application role must be unprivileged.")
         for grant in [
             "USAGE ON SCHEMA public",
+            "UPDATE (email,full_name,updated_at) ON users",
+            "UPDATE (github_username,linkedin_profile_url,portfolio_url,candidate_revision,candidate_ciphertext,onboarding_steps,updated_at) ON candidate_profiles",
+            "SELECT, INSERT, DELETE ON uploaded_resumes",
+            "UPDATE (label,target_role) ON uploaded_resumes",
             "SELECT ON alembic_version, users, candidate_profiles, user_settings, system_control, jobs, job_sources, source_observations, job_events, audit_events, idempotency_keys, integration_connections, background_tasks",
             "SELECT, INSERT, DELETE ON sessions",
             "INSERT ON jobs, job_sources, source_observations, job_events, audit_events, idempotency_keys, integration_connections, background_tasks",

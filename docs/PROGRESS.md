@@ -60,3 +60,21 @@ Started from verified main revision 31809c9408aba9b6c83960af66bfab587a9858a7. Ap
 | Regression checks | 18 pytest tests passed with a migrated disposable database and real Redis. Ruff lint/format, strict mypy, OpenAPI regeneration, ESLint, TypeScript, Prettier and optimized Next build passed. Headless Chrome passed login, task resume/pause, manual intake, retry, reload and sign-out on the live local stack. |
 
 **Checkpoint evidence.** Local readiness reported PostgreSQL and Redis healthy. The owner-selected defaults were restored after the smoke test. No credentials or private backup were staged. The phase report records the pushed SHA, CI run and hosting disposition. Cloud targets, public signup, automated key rotation and live provider permissions remain future work. [Next slice](NEXT_STEP.md)
+
+## Candidate profile and onboarding · Prompt 4 prerequisite · 2026-11-23
+
+Starting checkpoint was a506aa4a434652941b4e73fc996cdb4d39aad86c on main. The owner requested onboarding ahead of live GitHub import or Figma implementation.
+
+**Implementation audit.** Reviewed migrations 0001/0002, users and candidate_profiles, the existing profile/settings endpoints, opaque session and tenant dependencies, runtime grants/RLS, integration secret handling, resume_versions and generated_artifacts, idempotency/audit handling, OpenAPI generation and the server-side client. The original resume schema represents generated LaTeX revisions tied to preparation. Candidate-uploaded PDFs have their own tenant-owned storage. The existing identity, links, settings, integration and login paths remain the canonical implementations.
+
+| Area | Delivered and verified |
+|---|---|
+| Migration | Additive 0003_candidate extends candidate_profiles with an encrypted private payload, revision and step state. uploaded_resumes has a tenant key, bounded size and row policy. Existing data and sessions are preserved. |
+| Profile and provenance | All requested groups are editable. Private suggestions are separate from saved values. Explicit field review records an evidence reference. Editing the field clears its verification. Private notes, new personal fields and uploaded file contents are encrypted. |
+| Onboarding | Eight ordered steps persist across requests. Five optional sections support skip and later completion. Final confirmation requires completed basic identity and permissions review. Revising data or permissions invalidates the affected reviews. |
+| Application preparation | A read-only preview returns relevant, supplied answers and clarification questions. Only reviewed qualification fields qualify. Portfolio use and file selection are explicit. Outbound controls still require action-specific approval. |
+| Prompt 4 interface | Typed FastAPI contracts, regenerated TypeScript definitions and a server-side candidate client support profile, suggestions, review, onboarding, settings, uploads and preparation. The landing page was outside this phase. |
+| Local owner record | The supplied suggestion groups were saved through the authenticated local API and read back as user-provided suggestions. No candidate identities, files or suggestion values were added to the Git changes. |
+| Verification | Disposable PostgreSQL migration and rollback, Alembic metadata check, 23 backend tests including tenant isolation, concurrent retries, edit conflicts, encryption, skip/reopen and role-specific file handling. Ruff, mypy, frontend lint/type/format, production build and existing Chrome round trip passed. |
+
+Local PostgreSQL was backed up before upgrading to 0003_candidate. The phase report records the pushed SHA, CI and deployment disposition. Application providers remain disabled. [Prompt 4 handoff](NEXT_STEP.md)

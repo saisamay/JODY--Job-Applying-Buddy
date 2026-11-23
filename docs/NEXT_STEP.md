@@ -1,9 +1,11 @@
 # JODY next step
 
-**Phase 2A: import and review synthetic GitHub project evidence locally.** Begin with the current github_projects table and user-scoped access pattern. Use reviewed repository snapshots supplied as fixtures, including a commit, path and attribution. Keep live sync, generated resumes and delivery disabled.
+**Prompt 4 can implement the Figma UI on the existing profile and onboarding contracts.** Resume on the verified main checkpoint, read [progress](PROGRESS.md) and inspect the new UI brief before changing screens.
 
-1. Compare HEAD to origin/main, read the latest [progress](PROGRESS.md), and review F06, I01 and S01 in the [requirements matrix](REQUIREMENTS_MATRIX.md).
-2. Add the minimum migration for versioned evidence items and explicit owner review. Link each item to the project with a tenant-aware foreign key.
-3. Provide an authenticated local import and review path. Repeated imports of the same snapshot must preserve one revision. Unsupported metrics and unverifiable skill claims must remain unapproved.
-4. Demonstrate provenance, revocation and second-tenant denial through the normal API. Run the existing migration, pause, isolation and browser tests from the [runbook](../README.md).
-5. Update the ledgers, commit and push normally, verify the remote revision, CI and deployment disposition, and report the next slice.
+- Use the existing private session and the server-side candidateApi in apps/web/lib/api.ts. GET /api/v1/candidate returns identity, preferences, suggestions and origins, verified-field evidence, available resumes, permissions, revision and ordered step statuses. Types come from packages/shared/api.d.ts.
+- Render the eight steps returned by the API. Show skip only on optional steps. Keep proposed values visually separate until the owner accepts them. Provide explicit field review and final confirmation actions. A portfolio URL or a GitHub username does not establish skills or achievements.
+- Save against the displayed revision with an idempotency key. Reload on conflict and preserve the user's unsaved edits for review. Refresh after changes to automation permissions. Use an authenticated server-side upload path that can handle the 5 MiB PDF limit.
+- Use the preparation preview to display missing required questions and let the owner explicitly select a role-specific resume. Preserve pause and approval controls.
+- Test keyboard/mobile navigation, skip and resume, stale edits, the suggestion-to-review flow and private file access. Run the existing migration, API and browser suites and complete the normal Git checkpoint.
+
+The [Ubuntu runbook](../README.md) documents the route map, file limits and confirmation semantics. Live evidence sync and delivery remain later slices.

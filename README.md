@@ -92,3 +92,21 @@ All routes below require a live bearer session. Mutations in this table require 
 | GET /api/v1/audit | Read the latest 100 tenant events. The runtime role can append but cannot alter audit history. |
 
 With the virtual environment and .env loaded and PYTHONPATH set as above, run `python apps/worker/run_once.py` to publish/consume one eligible probe. Pending PostgreSQL rows survive queue loss and are eligible for republication after ten seconds. Worker execution and the administrator's pause serialize on the singleton gate row. While paused, manual preparation and reads remain available. Resuming the worker never enables a delivery channel.
+
+## Candidate profile and onboarding
+
+Use the server-side `candidateApi` in apps/web/lib/api.ts and its generated OpenAPI types in packages/shared/api.d.ts. All candidate routes use the existing private session. Read `GET /api/v1/candidate` for the current revision, editable fields, provenance, pending suggestions, resume metadata, current permissions and eight ordered onboarding steps. Existing clients can continue to use `GET /api/v1/profile`.
+
+| Operation under /api/v1/candidate | Use |
+|---|---|
+| PATCH the base path | Send revision and fields. Omitted fields stay unchanged. Explicit null clears an optional field. Saving a field marks it user-provided and invalidates its previous verification. |
+| PATCH /suggestions | Save or dismiss a proposed field with origin user_provided or inferred. To accept, submit the chosen value through the profile edit. Suggestions alone never supply application answers. |
+| POST /review | Review the entire current value of one field and record its supporting evidence reference. This records the owner's verification at that revision. |
+| POST /onboarding | Submit revision, step and status. Basic identity, permissions review and final confirmation require explicit completion. The other five sections can be skipped and revisited. Relevant edits reopen the affected step and final confirmation. |
+| POST /resumes | Send a raw application/pdf body with a revision query parameter. Pass the percent-encoded label and optional role in X-Resume-Label and X-Resume-Role headers. Stores up to 20 PDFs per owner, each at most 5 MiB. |
+| GET, PATCH or DELETE /resumes/{id} | Download as an attachment, edit the role/label, or remove an upload. DELETE takes revision in the query. Uploads are private source documents. The system checks size and PDF boundary markers and does not extract or certify their claims. |
+| POST /application-preview | Pass required field names, optional resume_id and include_portfolio. The response contains answers and clarification requests. Qualification fields require owner review. Unknown or missing answers stay unanswered. The special field resume prompts for a selection if none was supplied. |
+
+Use a UUID Idempotency-Key on mutations. Keep the same key for a retry of the same command. Reload after a 409 revision conflict. The preview is read-only. The existing PATCH /api/v1/profile/settings endpoint handles permission changes. Re-read the candidate after changing permissions. Onboarding confirmation and account-level permissions never authorize sending an email or submitting an application. Those operations still require separate approval for the exact destination and content.
+
+Name, email and public profile links keep their original database columns. Additional personal fields, pending suggestions, evidence notes and resume bytes use authenticated encryption with user-bound context. Resume lookup, download and mutation also enforce database row-level security. Audits and command receipts contain revision/ID metadata. The migration neither seeds real personal information nor imports unverifiable claims from opaque legacy vault data.

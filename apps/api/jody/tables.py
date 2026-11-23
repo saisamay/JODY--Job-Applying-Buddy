@@ -133,6 +133,9 @@ profiles = Table(
     Column("resume_master_branch", String(50), server_default="main"),
     Column("master_latex_template", Text),
     doc("profile_vault_json"),
+    Column("candidate_revision", Integer, nullable=False, server_default="0"),
+    Column("candidate_ciphertext", LargeBinary),
+    doc("onboarding_steps"),
     timestamp("updated_at"),
 )
 settings = Table(
@@ -340,4 +343,13 @@ commands = Table(
     Column("request_digest", String(64), nullable=False),
     doc("response"),
     timestamp(),
+)
+
+uploaded_resumes = entity(
+    "uploaded_resumes",
+    Column("label", String(160), nullable=False),
+    Column("target_role", String(160)),
+    Column("byte_size", Integer, nullable=False),
+    Column("ciphertext", LargeBinary, nullable=False),
+    CheckConstraint("byte_size BETWEEN 1 AND 5242880"),
 )

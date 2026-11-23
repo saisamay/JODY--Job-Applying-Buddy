@@ -62,9 +62,13 @@ def encryption_key() -> bytes:
     return key
 
 
-def seal(key: bytes, user: UUID, provider: str, secret: str) -> tuple[bytes, bytes]:
+def seal(key: bytes, user: UUID, provider: str, secret: str | bytes) -> tuple[bytes, bytes]:
     nonce = os.urandom(12)
-    return nonce, AESGCM(key).encrypt(nonce, secret.encode(), f"jody:v1:{user}:{provider}".encode())
+    return nonce, AESGCM(key).encrypt(
+        nonce,
+        secret.encode() if isinstance(secret, str) else secret,
+        f"jody:v1:{user}:{provider}".encode(),
+    )
 
 
 def unseal(key: bytes, user: UUID, provider: str, nonce: bytes, ciphertext: bytes) -> bytes:
