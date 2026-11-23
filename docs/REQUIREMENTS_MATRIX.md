@@ -56,7 +56,7 @@ Each row has a permanent ID. Source references use the printed PDF page and sect
 | I06 | pp2–4 §§3,4.4,4.6 | P1 | Gmail OAuth for outgoing mail, inbound tracking and reversible mailbox changes. | Incremental consent, cursor recovery, provider throttling and revocation tested. Approved message receipt or reconciliation prevents automatic duplicate sends. | Planned |
 | I07 | pp1–4,7–8 §§1–4,7–8 | P1 | Telegram Bot API alerts, one-tap decisions, answers and slash pause/resume. | Paired owner receives minimal alert. Signed-in account binding, secret webhook header, callback expiry and replay checks protect all actions. Unknown chat cannot operate the bot. | Planned |
 | I08 | pp3,6,8 §§4.4,6,8 | P1 | Portal-specific application support. | Capability registry records read/prepare/submit rights per provider. An unsupported portal produces a packet and link. A documented permitted write needs a matching approval and receipt. | Adapted |
-| I09 | Owner | P0 | Use portfolio as a reference and Figma as visual direction. | Owner can cite a reviewed portfolio item. UI review compares hierarchy and palette to node 131:1408 and checks for JODY-specific copy. | Planned |
+| I09 | Owner | P0 | Use portfolio as a reference and Figma as visual direction. | Owner can cite a reviewed portfolio item. UI review compares hierarchy and palette to node 131:1408 and checks for JODY-specific copy. | Tested |
 
 ## Security and reliability requirements
 
@@ -119,3 +119,11 @@ These rows capture the owner's phase 1 foundation instructions. The original pro
 | CI08 | §5 | P0 | Prepare grounded versions per application and record changes. | Select a relevant authorized original, preserve verified dates and education, link an idempotent version and application, record reasons and unresolved questions, and honor owner exclusions. | Tested |
 | CI09 | §6 | P0 | Configure local inference and enforce spending controls. | Exercise actual local embeddings and structured chat with synthetic evidence. Offline retries count against the daily budget, replays reuse ciphertext-backed cached results, and the monetary limit is zero. | Tested |
 | CI10 | §§7–8 | P0 | Evaluate, migrate and checkpoint. | Run a labeled fixture set with precision, recall and errors, migrate legacy and clean databases, verify regressions and report remote disposition. | Tested |
+
+## Public and private UI acceptance supplement
+
+| ID | Source | Priority | Requirement | Acceptance criteria | Status |
+|---|---|---|---|---|---|
+| UI01 | UI brief A | P0 | Public JODY landing page and interactive product preview. | Visitors can search the labeled sample openings, reach discovery, matching and privacy sections, switch preview views and navigate to sign-in on mobile and desktop. | Tested |
+| UI02 | UI brief B | P0 | Private career workspace with twelve navigable sections. | Signed-in owner can inspect jobs and trust, group applications by stage, read approvals and activity, manage resumes and policy entries, and pause work. Backend-backed views distinguish empty data, examples and unavailable operations. | Tested |
+| UI03 | UI brief, verification | P0 | Responsive and accessible interactions and screenshot evidence. | Exercise both experiences and workspace navigation at 360, 390, 768, 1024 and 1440 pixels, check overflow and automated accessibility, and retain a pair of synthetic captures at each width. | Tested |

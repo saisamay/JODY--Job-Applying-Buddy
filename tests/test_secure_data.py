@@ -297,3 +297,40 @@ def test_prd_enum_labels(admin_db):
                 {"name": name},
             )
             assert list(actual) == labels.split()
+
+
+def test_workspace_reads_tenant_records_and_policies(client, auth, second_auth):
+    path = API + "/workspace"
+    other = client.get(path, headers=second_auth).json()
+    job = next(j for j in other["jobs"] if j["id"] == str(LEGACY_JOB))
+    assert job["company"] == "Fixture Company" and job["trust_score"] == 45
+    assert other["applications"] and other["approvals"] and other["mail"] and other["outreach"]
+    private = client.get(path, headers=auth).json()
+    assert all(j["id"] != str(LEGACY_JOB) for j in private["jobs"])
+    assert "encrypted_credentials" not in str(private)
+    for route, payload, field in [
+        ("source-policy", {"kind": "manual", "identifier": "Owner feed"}, "allowlist"),
+        (
+            "block-policy",
+            {"kind": "domain", "value": "test.invalid", "reason": "Owner choice"},
+            "blocklist",
+        ),
+    ]:
+        key = mutation(auth)
+        for _ in range(2):
+            assert (
+                client.put(
+                    f"{path}/{route}", headers=key, json={**payload, "enabled": True}
+                ).status_code
+                == 200
+            )
+        label = payload.get("value") or payload["identifier"]
+        assert sum(r["title"] == label for r in client.get(path, headers=auth).json()[field]) == 1
+        assert all(r["title"] != label for r in client.get(path, headers=second_auth).json()[field])
+        assert (
+            client.put(
+                f"{path}/{route}", headers=mutation(auth), json={**payload, "enabled": False}
+            ).status_code
+            == 200
+        )
+        assert all(r["title"] != label for r in client.get(path, headers=auth).json()[field])

@@ -23,6 +23,7 @@ from .contracts import Error, Live, Ready
 from .controls import controls
 from .routes import router
 from .security import encryption_key, runtime_engine
+from .workspace import workspace
 
 log = logging.getLogger("jody.http")
 log.setLevel(logging.INFO)
@@ -53,6 +54,7 @@ app.include_router(candidate)
 app.include_router(resumes_api)
 app.include_router(career)
 app.include_router(bridge)
+app.include_router(workspace)
 
 
 @app.middleware("http")

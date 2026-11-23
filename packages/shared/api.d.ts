@@ -571,6 +571,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/workspace": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Overview */
+    get: operations["overview_api_v1_workspace_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/workspace/source-policy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Source Policy */
+    put: operations["source_policy_api_v1_workspace_source_policy_put"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/workspace/block-policy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Block Policy */
+    put: operations["block_policy_api_v1_workspace_block_policy_put"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/health/live": {
     parameters: {
       query?: never;
@@ -633,6 +684,20 @@ export interface components {
       facet: string;
       /** Evidence Id */
       evidence_id: string | null;
+    };
+    /** BlockPolicy */
+    BlockPolicy: {
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: "company" | "domain" | "email";
+      /** Value */
+      value: string;
+      /** Reason */
+      reason: string;
+      /** Enabled */
+      enabled: boolean;
     };
     /** Candidate */
     Candidate: {
@@ -761,6 +826,25 @@ export interface components {
       /** Details */
       details?: string | null;
     };
+    /** Entry */
+    Entry: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Title */
+      title: string;
+      /** Detail */
+      detail?: string | null;
+      /** Status */
+      status?: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
     /** Error */
     Error: {
       /** Detail */
@@ -881,6 +965,35 @@ export interface components {
       requires_owner_review: boolean;
       /** Requirements */
       requirements: components["schemas"]["Clause"][];
+    };
+    /** JobView */
+    JobView: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Description */
+      description: string;
+      /** Role */
+      role: string | null;
+      /** Company */
+      company: string | null;
+      /** Source Url */
+      source_url: string | null;
+      /** Location */
+      location: string | null;
+      /** Status */
+      status: string;
+      /** Trust Score */
+      trust_score: number | null;
+      /** Ats Score */
+      ats_score: number | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
     };
     /** Live */
     Live: {
@@ -1128,6 +1241,18 @@ export interface components {
       /** Kind */
       kind: string;
     };
+    /** SourcePolicy */
+    SourcePolicy: {
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: "whatsapp" | "linkedin_feed" | "linkedin_post" | "manual";
+      /** Identifier */
+      identifier: string;
+      /** Enabled */
+      enabled: boolean;
+    };
     /**
      * Step
      * @enum {string}
@@ -1191,6 +1316,39 @@ export interface components {
     Version: {
       /** Revision */
       revision: number;
+    };
+    /** Workspace */
+    Workspace: {
+      /** Jobs */
+      jobs: components["schemas"]["JobView"][];
+      /** Applications */
+      applications: components["schemas"]["Entry"][];
+      /** Approvals */
+      approvals: components["schemas"]["Entry"][];
+      /** Outreach */
+      outreach: components["schemas"]["Entry"][];
+      /** Mail */
+      mail: components["schemas"]["Entry"][];
+      /** Audit */
+      audit: components["schemas"]["Entry"][];
+      /** Projects */
+      projects: components["schemas"]["Entry"][];
+      /** Allowlist */
+      allowlist: components["schemas"]["Entry"][];
+      /** Blocklist */
+      blocklist: components["schemas"]["Entry"][];
+      /** Integrations */
+      integrations: string[];
+      /** Total Jobs */
+      total_jobs: number;
+      /** Total Applications */
+      total_applications: number;
+      /** Pending Approvals */
+      pending_approvals: number;
+      /** Trust Threshold */
+      trust_threshold: number;
+      /** Ats Target */
+      ats_target: number;
     };
   };
   responses: never;
@@ -2510,6 +2668,100 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": components["schemas"]["Preparation"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  overview_api_v1_workspace_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Workspace"];
+        };
+      };
+    };
+  };
+  source_policy_api_v1_workspace_source_policy_put: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SourcePolicy"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  block_policy_api_v1_workspace_block_policy_put: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BlockPolicy"];
       };
     };
     responses: {

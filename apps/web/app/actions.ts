@@ -1,7 +1,16 @@
 "use server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { ApiError, api } from "../lib/api";
+import { redirect } from "next/navigation";
+import { randomUUID } from "node:crypto";
+import {
+  ApiError,
+  api,
+  candidateApi,
+  workspaceApi,
+  policyApi,
+  type Comparison,
+} from "../lib/api";
 
 function message(error: unknown) {
   return error instanceof ApiError
@@ -25,8 +34,7 @@ export async function signIn(
   } catch (error) {
     return message(error);
   }
-  revalidatePath("/");
-  return "";
+  redirect("/workspace");
 }
 
 export async function signOut(): Promise<string> {
@@ -35,11 +43,11 @@ export async function signOut(): Promise<string> {
   try {
     if (token) await api.logout(token);
   } catch (error) {
-    return message(error);
+    if (!(error instanceof ApiError && error.status === 401))
+      return message(error);
   }
   jar.delete("jody_session");
-  revalidatePath("/");
-  return "";
+  redirect("/signin");
 }
 
 export async function saveJob(
@@ -56,11 +64,11 @@ export async function saveJob(
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       (await cookies()).delete("jody_session");
-      revalidatePath("/");
+      revalidatePath("/workspace");
     }
     return message(error);
   }
-  revalidatePath("/");
+  revalidatePath("/workspace");
   return "Job saved.";
 }
 
@@ -78,6 +86,156 @@ export async function changePause(
   } catch (error) {
     return message(error);
   }
-  revalidatePath("/");
+  revalidatePath("/workspace");
   return "";
+}
+
+async function ownerToken() {
+  const t = (await cookies()).get("jody_session")?.value;
+  if (!t) throw new ApiError(401, "Sign in again to continue.");
+  return t;
+}
+export async function uploadResume(_: string, form: FormData) {
+  try {
+    const token = await ownerToken();
+    const pdf = form.get("file");
+    if (!(pdf instanceof File) || !pdf.size || pdf.size > 5242880)
+      return "Select a PDF up to 5 MiB.";
+    await candidateApi.upload(
+      token,
+      pdf,
+      String(form.get("label") || ""),
+      String(form.get("role") || "") || null,
+      Number(form.get("revision")),
+      String(form.get("command")),
+    );
+  } catch (e) {
+    return message(e);
+  }
+  revalidatePath("/workspace");
+  return "Resume uploaded.";
+}
+export async function saveLinks(_: string, form: FormData) {
+  try {
+    await candidateApi.edit(
+      await ownerToken(),
+      {
+        revision: Number(form.get("revision")),
+        fields: {
+          github: String(form.get("github") || "") || null,
+          portfolio: String(form.get("portfolio") || "") || null,
+        },
+      },
+      String(form.get("command")),
+    );
+  } catch (e) {
+    return message(e);
+  }
+  revalidatePath("/workspace");
+  return "Profile links saved.";
+}
+export async function savePreferences(_: string, form: FormData) {
+  try {
+    await workspaceApi.settings(
+      await ownerToken(),
+      Number(form.get("trust")),
+      Number(form.get("ats")),
+      randomUUID(),
+    );
+  } catch (e) {
+    return message(e);
+  }
+  revalidatePath("/workspace");
+  return "Settings saved.";
+}
+export async function storeCredential(_: string, form: FormData) {
+  const provider = String(form.get("provider"));
+  if (!["github", "gmail", "telegram", "resume_git"].includes(provider))
+    return "Unknown provider.";
+  try {
+    await workspaceApi.credential(
+      await ownerToken(),
+      provider,
+      String(form.get("credential") || ""),
+      randomUUID(),
+    );
+  } catch (e) {
+    return message(e);
+  }
+  revalidatePath("/workspace");
+  return "Credential stored.";
+}
+export async function compareJob(
+  id: string,
+): Promise<{ result?: Comparison; error?: string }> {
+  try {
+    return { result: await workspaceApi.compare(await ownerToken(), id) };
+  } catch (e) {
+    return { error: message(e) };
+  }
+}
+export async function changePolicy(_: string, form: FormData) {
+  const kind = form.get("kind"),
+    value = String(form.get("value") || ""),
+    enabled = form.get("operation") === "add";
+  try {
+    const t = await ownerToken();
+    if (kind === "company" || kind === "domain" || kind === "email")
+      await policyApi.block(
+        t,
+        {
+          kind,
+          value,
+          reason: String(form.get("reason") || "Owner policy"),
+          enabled,
+        },
+        randomUUID(),
+      );
+    else if (
+      kind === "whatsapp" ||
+      kind === "linkedin_feed" ||
+      kind === "linkedin_post" ||
+      kind === "manual"
+    )
+      await policyApi.allow(
+        t,
+        { kind, identifier: value, enabled },
+        randomUUID(),
+      );
+    else return "Choose a valid policy type.";
+  } catch (e) {
+    return message(e);
+  }
+  revalidatePath("/workspace");
+  return enabled ? "Policy saved." : "Policy removed.";
+}
+
+export async function editUpload(_: string, form: FormData) {
+  try {
+    const t = await ownerToken(),
+      id = String(form.get("id")),
+      revision = Number(form.get("revision"));
+    if (form.get("operation") === "remove") {
+      if (form.get("confirm") !== "yes")
+        return "Confirm removal of the selected upload.";
+      await candidateApi.removeResume(t, id, revision, randomUUID());
+    } else {
+      await candidateApi.editResume(
+        t,
+        id,
+        {
+          label: String(form.get("label") || ""),
+          target_role: String(form.get("role") || "") || null,
+          revision,
+        },
+        randomUUID(),
+      );
+    }
+  } catch (e) {
+    return message(e);
+  }
+  revalidatePath("/workspace");
+  return form.get("operation") === "remove"
+    ? "Upload removed."
+    : "Resume details saved.";
 }

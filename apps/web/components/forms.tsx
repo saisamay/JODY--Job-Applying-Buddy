@@ -8,7 +8,6 @@ function Submit({ label, waiting }: { label: string; waiting: string }) {
   return (
     <button type="submit" disabled={pending} className="primary">
       {pending ? waiting : label}
-      <span aria-hidden="true"> →</span>
     </button>
   );
 }

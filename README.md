@@ -1,6 +1,6 @@
 # JODY — Your AI Job Applying Buddy
 
-JODY currently provides a private local workspace for manual job intake. Sign in, paste a vacancy, optionally keep its source URL and reload to see the saved record. Saving the same description and URL again is safe. The workspace shows the most recent 100 entries. No job-board accounts, model keys or paid services are needed.
+The public JODY landing page lets visitors explore sample jobs and an interactive product preview. The private workspace displays the owner’s saved jobs, trust evaluations, applications, resumes, evidence sources, approvals and activity. Local manual intake, PDF management, qualification comparisons, settings and the global pause control use the authenticated API. Public search results and sample evaluations carry fixture labels.
 
 ## Run on Ubuntu 24.04
 
@@ -21,7 +21,7 @@ The last command creates a mode-0600 .env from .env.example with separate migrat
 ./infra/run-local.sh
 ```
 
-Open [the local workspace](http://127.0.0.1:3000) and enter the value of JODY_OWNER_KEY from your local .env. The runner starts PostgreSQL 16 with pgvector and Redis, applies Alembic migrations, checks broker connectivity and launches FastAPI and Next.js on loopback. The web server calls FastAPI server-side using API_BASE_URL. The browser receives an HTTP-only, same-site session cookie. The API stores a hash of the expiring token. Source URLs are retained as text and opened only at the owner's request.
+Open the [landing page](http://127.0.0.1:3000/) or [sign in](http://127.0.0.1:3000/signin) with JODY_OWNER_KEY from your local .env to open the [private workspace](http://127.0.0.1:3000/workspace). The runner starts PostgreSQL 16 with pgvector and Redis, applies Alembic migrations, checks broker connectivity and launches FastAPI and Next.js on loopback. The web server calls FastAPI server-side using API_BASE_URL. The browser receives an HTTP-only, same-site session cookie. The API stores a hash of the expiring token. Source URLs are retained as text and opened only at the owner's request.
 
 Use Ctrl-C to stop the web and API processes. Stop the data services with `docker compose --env-file .env -f infra/compose.yaml stop`. Their named volumes preserve saved jobs. To use the compiled frontend, run `npm run build` followed by `JODY_WEB_MODE=start ./infra/run-local.sh`.
 
@@ -58,7 +58,7 @@ npm run format:check
 npm run build
 ```
 
-Run the production build with the development web server stopped. Run the browser smoke against a disposable local stack. It signs in with the configured owner key and adds one synthetic entry. Use `npx playwright install chromium` once and then `npm run test:browser`, or set CHROME_BIN to an installed Chrome executable. Python integration tests create a uniquely named database, run migrations, exercise the real dependencies, then remove only that database. CI runs these checks with disposable Compose volumes on an Ubuntu runner. Format changed sources with `ruff format` and `npx prettier --write`.
+Run the production build with the development web server stopped. Run the browser smoke against a disposable local stack. It exercises public search, signs in with the configured owner key, visits all twelve workspace views at five widths, checks accessibility, toggles pause, saves a synthetic job, compares it, manages a temporary PDF and edits a temporary blocklist entry. For visual captures, point WEB_BASE_URL at a synthetic QA stack and set both JODY_SYNTHETIC_WORKSPACE=1 and JODY_UI_CAPTURE_DIR to an output directory. [Screenshot gallery](docs/screenshots/ui/README.md) Use `npx playwright install chromium` once and then `npm run test:browser`, or set CHROME_BIN to an installed Chrome executable. Python integration tests create a uniquely named database, run migrations, exercise the real dependencies, then remove only that database. CI runs these checks with disposable Compose volumes on an Ubuntu runner. Format changed sources with `ruff format` and `npx prettier --write`.
 
 | Location | Responsibility |
 |---|---|

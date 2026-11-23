@@ -37,7 +37,9 @@ async function fetchApi(
         body:
           body instanceof Blob ? body : body ? JSON.stringify(body) : undefined,
         cache: "no-store",
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(
+          path.endsWith("/compare") ? 600_000 : 10_000,
+        ),
       },
     );
   } catch {
@@ -184,4 +186,61 @@ export const candidateApi = {
       undefined,
       key,
     ),
+};
+
+export type ProjectSource = Pick<
+  Schema["SourceInfo"],
+  "id" | "label" | "reference" | "kind"
+>;
+export const workspaceApi = {
+  projectSources: async (token: string): Promise<ProjectSource[]> => {
+    const profile = await request<Schema["CareerProfile"]>(
+      "/api/v1/career/profile",
+      "GET",
+      token,
+    );
+    return profile.sources
+      .filter((s) => ["github", "portfolio", "portfolio_html"].includes(s.kind))
+      .map(({ id, label, reference, kind }) => ({
+        id,
+        label,
+        reference,
+        kind,
+      }));
+  },
+  read: (token: string) =>
+    request<Schema["Workspace"]>("/api/v1/workspace", "GET", token),
+  compare: (token: string, id: string) =>
+    request<Schema["Comparison"]>(
+      "/api/v1/career/jobs/" + encodeURIComponent(id) + "/compare",
+      "POST",
+      token,
+    ),
+  settings: (token: string, trust: number, ats: number, key: string) =>
+    request(
+      "/api/v1/profile/settings",
+      "PATCH",
+      token,
+      { min_trust_score_auto_apply: trust, min_ats_score_threshold: ats },
+      key,
+    ),
+  credential: (token: string, provider: string, value: string, key: string) =>
+    request(
+      "/api/v1/integrations/" + encodeURIComponent(provider),
+      "PUT",
+      token,
+      { credential: value },
+      key,
+    ),
+};
+export type WorkspaceData = Schema["Workspace"];
+export type WorkspaceJob = Schema["JobView"];
+export type WorkspaceEntry = Schema["Entry"];
+export type ResumeInfo = Schema["ResumeInfo"];
+export type Comparison = Schema["Comparison"];
+export const policyApi = {
+  allow: (t: string, body: Schema["SourcePolicy"], k: string) =>
+    request("/api/v1/workspace/source-policy", "PUT", t, body, k),
+  block: (t: string, body: Schema["BlockPolicy"], k: string) =>
+    request("/api/v1/workspace/block-policy", "PUT", t, body, k),
 };
