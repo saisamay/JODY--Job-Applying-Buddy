@@ -96,5 +96,5 @@ These rows capture the owner's phase 1 foundation instructions. The original pro
 |---|---|---|---|---|---|
 | T11 | Owner, phase 1 | P0 | Typed FastAPI / SQLAlchemy / Alembic and Next.js App Router foundation. | From a clean database, upgrade the schema and verify pgvector, then use the typed client in a browser to sign in, save, reload, retry and sign out. | Tested |
 | T12 | Owner, phase 1 | P0 | Health, readiness, request logging and basic errors. | Reach live/ready endpoints, fail readiness with an offline dependency, capture a request ID and structured request record, return sanitized errors for invalid input. | Tested |
-| D08 | Owner, phase 1 | P0 | Reproducible Ubuntu stack, environment template and Compose services. | Generate private local configuration, start both data services from Compose, migrate and run the complete application. | Partial |
-| D09 | Owner, phase 1 | P0 | Lint, format, type checks, backend and browser tests in GitHub Actions. | Local checks pass and a remote CI run for the same commit passes. See phase report for remote result. | Partial |
+| D08 | Owner, phase 1 | P0 | Reproducible Ubuntu stack, environment template and Compose services. | Generate private local configuration, start both data services from Compose, migrate and run the complete application. | Tested |
+| D09 | Owner, phase 1 | P0 | Lint, format, type checks, backend and browser tests in GitHub Actions. | Local checks pass and a remote CI run for the same commit passes. The linked CI run in PROGRESS.md records the result. | Tested |
