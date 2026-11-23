@@ -1,0 +1,23 @@
+{
+  "evidence": [
+    "Built REST APIs with Python and PostgreSQL.",
+    "Designed relational databases for course registration.",
+    "Maintained deployment pipelines for a public web service.",
+    "3 years of Python experience.",
+    "Not authorized to work in Canada."
+  ],
+  "jobs": [
+    ["Backend Developer", "Required: Python and PostgreSQL", true],
+    ["Python API Engineer", "Responsibilities: Build HTTP endpoints with Python", true],
+    ["Software Engineer — Services", "Required: Design relational storage", true],
+    ["Application Developer", "Required: Build RESTful services\nPreferred: Rust", true],
+    ["Release Engineer", "Responsibilities: Maintain continuous delivery", true],
+    ["Platform Engineer", "Required: At least 2 years of Python experience", true],
+    ["Backend Developer", "Required: COBOL and CICS", false],
+    ["Python API Engineer", "Required: 8 years of Python experience", false],
+    ["Integration Engineer", "Required: Python\nMust be authorized to work in Canada.", false],
+    ["Application Developer", "Required: Python\nActive security clearance required.", false],
+    ["Storage Engineer", "Required: Kernel block driver development", false],
+    ["Data Services Engineer", "Responsibilities: Model transactional schemas", true]
+  ]
+}

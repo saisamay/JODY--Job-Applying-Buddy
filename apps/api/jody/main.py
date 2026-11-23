@@ -16,6 +16,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from .candidate import candidate
 from .candidate_resumes import resumes_api
+from .career.access import bridge
+from .career.routes import career
 from .config import redis_url
 from .contracts import Error, Live, Ready
 from .controls import controls
@@ -49,6 +51,8 @@ app.include_router(router)
 app.include_router(controls)
 app.include_router(candidate)
 app.include_router(resumes_api)
+app.include_router(career)
+app.include_router(bridge)
 
 
 @app.middleware("http")
@@ -108,7 +112,7 @@ def ready(request: Request, response: Response) -> Ready:
                 conn.scalar(
                     text("""
                 SELECT EXISTS (SELECT FROM pg_extension WHERE extname = 'vector')
-                   AND EXISTS (SELECT FROM alembic_version WHERE version_num = '0003_candidate')
+                   AND EXISTS (SELECT FROM alembic_version WHERE version_num = '0004_career')
             """)
                 )
             )

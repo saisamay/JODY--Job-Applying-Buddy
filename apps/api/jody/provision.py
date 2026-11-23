@@ -27,6 +27,9 @@ def provision() -> None:
             raise ValueError("Application role must be unprivileged.")
         for grant in [
             "USAGE ON SCHEMA public",
+            "SELECT, INSERT ON career_sources, career_versions, career_cache, career_usage, career_proposals, resume_versions, applications",
+            "SELECT ON github_projects, approval_requests, companies, blocked_entities",
+            "UPDATE (tokens) ON career_usage",
             "UPDATE (email,full_name,updated_at) ON users",
             "UPDATE (github_username,linkedin_profile_url,portfolio_url,candidate_revision,candidate_ciphertext,onboarding_steps,updated_at) ON candidate_profiles",
             "SELECT, INSERT, DELETE ON uploaded_resumes",

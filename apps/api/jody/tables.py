@@ -353,3 +353,41 @@ uploaded_resumes = entity(
     Column("ciphertext", LargeBinary, nullable=False),
     CheckConstraint("byte_size BETWEEN 1 AND 5242880"),
 )
+
+career_sources = entity(
+    "career_sources",
+    Column("kind", Text, nullable=False),
+    Column("fingerprint", String(64), nullable=False),
+    Column("original", LargeBinary, nullable=False),
+    Column("extraction", LargeBinary, nullable=False),
+    UniqueConstraint("user_id", "fingerprint"),
+)
+career_versions = entity(
+    "career_versions",
+    Column("revision", Integer, nullable=False),
+    Column("decisions", JSONB, nullable=False),
+    UniqueConstraint("user_id", "revision"),
+)
+career_cache = entity(
+    "career_cache",
+    Column("cache_key", String(64), nullable=False),
+    Column("payload", LargeBinary, nullable=False),
+    UniqueConstraint("user_id", "cache_key"),
+)
+career_usage = entity(
+    "career_usage",
+    Column("operation", Text, nullable=False),
+    Column("model", Text, nullable=False),
+    Column("tokens", Integer),
+    Column("cost_microusd", Integer, nullable=False, server_default="0"),
+)
+career_proposals = entity(
+    "career_proposals",
+    Column("application_id", Uuid, nullable=False),
+    ref("application_id", "applications"),
+    Column("baseline_id", Uuid, nullable=False),
+    ref("baseline_id", "career_sources"),
+    Column("resume_version_id", Uuid, nullable=False),
+    ref("resume_version_id", "resume_versions"),
+    Column("revision", Integer, nullable=False),
+)
