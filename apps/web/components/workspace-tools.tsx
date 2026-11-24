@@ -50,9 +50,11 @@ export function ActionForm({
   );
 }
 export function Resumes({
+  uploadLimitMiB,
   profile,
   command,
 }: {
+  uploadLimitMiB: number;
   profile: ProfileView;
   command: string;
 }) {
@@ -162,10 +164,19 @@ export function Resumes({
             <input name="role" maxLength={160} />
           </label>
           <label>
-            PDF file · up to 5 MiB
+            PDF file · up to {uploadLimitMiB} MiB
             <input
               type="file"
               name="file"
+              onChange={(e) => {
+                const input = e.currentTarget;
+                input.setCustomValidity(
+                  (input.files?.[0]?.size ?? 0) > uploadLimitMiB * 1048576
+                    ? `Select a PDF up to ${uploadLimitMiB} MiB.`
+                    : "",
+                );
+                input.reportValidity();
+              }}
               accept="application/pdf,.pdf"
               required
             />

@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+previews:
+  generation: "off"
+services:
+  - type: web
+    name: jody-preview-api
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    autoDeployTrigger: checksPass
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health/ready
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jody-preview-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: jody-preview-queue
+          property: connectionString
+      - key: JODY_PRIVATE_PREVIEW
+        value: "1"
+      - key: JODY_AI_PROVIDER
+        value: mock
+      - key: JODY_DB_APP_PASSWORD
+        generateValue: true
+      - key: JODY_OWNER_KEY
+        sync: false
+      - key: JODY_ENCRYPTION_KEY
+        sync: false
+  - type: keyvalue
+    name: jody-preview-queue
+    plan: free
+    region: oregon
+    maxmemoryPolicy: noeviction
+    ipAllowList: []
+databases:
+  - name: jody-preview-db
+    databaseName: jody_preview
+    user: jody_migrator
+    plan: free
+    postgresMajorVersion: "16"
+    region: oregon
+    ipAllowList: []

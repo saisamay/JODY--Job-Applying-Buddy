@@ -19,6 +19,10 @@ async function fetchApi(
   key?: string,
   metadata?: Record<string, string>,
 ): Promise<Response> {
+  const origin = process.env.API_BASE_URL;
+  if (process.env.VERCEL && (!origin || !/^https:\/\//.test(origin))) {
+    throw new ApiError(503, "Configure the HTTPS preview API.");
+  }
   const headers = new Headers(metadata);
   if (token) headers.set("Authorization", `Bearer ${token}`);
   if (key) headers.set("Idempotency-Key", key);
@@ -29,23 +33,25 @@ async function fetchApi(
     );
   let response: Response;
   try {
-    response = await fetch(
-      new URL(path, process.env.API_BASE_URL || "http://127.0.0.1:8000"),
-      {
-        method,
-        headers,
-        body:
-          body instanceof Blob ? body : body ? JSON.stringify(body) : undefined,
-        cache: "no-store",
-        signal: AbortSignal.timeout(
-          path.endsWith("/compare") ? 600_000 : 10_000,
-        ),
-      },
-    );
+    response = await fetch(new URL(path, origin || "http://127.0.0.1:8000"), {
+      method,
+      headers,
+      body:
+        body instanceof Blob ? body : body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(
+        process.env.VERCEL
+          ? 90_000
+          : path.endsWith("/compare")
+            ? 600_000
+            : 10_000,
+      ),
+    });
   } catch {
     throw new ApiError(
       503,
-      "The API is unreachable. Check the local services and try again.",
+      "The API is unavailable or waking up. Try again shortly.",
     );
   }
   if (!response.ok) {
@@ -66,7 +72,7 @@ async function request<T>(...args: Parameters<typeof fetchApi>): Promise<T> {
 
 export const api = {
   gate: (token: string) =>
-    request<Schema["Pause"]>("/api/v1/system/kill-switch", "GET", token),
+    request<Schema["GateState"]>("/api/v1/system/kill-switch", "GET", token),
   setGate: (token: string, paused: boolean, key: string) =>
     request<Schema["Pause"]>(
       "/api/v1/system/kill-switch",

@@ -198,6 +198,10 @@ class Ollama:
 
 
 def configured() -> Provider:
+    from ..config import private_preview
+
+    if private_preview():
+        return Mock()
     name = os.getenv("JODY_AI_PROVIDER", "mock")
     if name == "mock":
         return Mock()

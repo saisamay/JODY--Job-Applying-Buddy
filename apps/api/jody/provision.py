@@ -13,15 +13,15 @@ def provision() -> None:
         raise ValueError("Configure an independent application database login.")
     role = sql.Identifier(app.username)
     with connect(admin.set(drivername="postgresql").render_as_string(hide_password=False)) as db:
+        db.execute("SET LOCAL lock_timeout = '60s'")
+        db.execute("SELECT pg_advisory_xact_lock(431027115)")
         current = db.execute(
             "SELECT rolsuper,rolbypassrls,rolcreaterole,rolcreatedb,rolreplication FROM pg_roles WHERE rolname=%s",
             (app.username,),
         ).fetchone()
         if current is None:
             db.execute(
-                sql.SQL(
-                    "CREATE ROLE {} LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB PASSWORD {}"
-                ).format(role, sql.Literal(app.password))
+                sql.SQL("CREATE ROLE {} LOGIN PASSWORD {}").format(role, sql.Literal(app.password))
             )
         elif any(current):
             raise ValueError("Application role must be unprivileged.")

@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from sqlalchemy import Connection, delete, func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from .config import private_preview
 from .routes import Owner
 from .security import PRIVATE_OWNER, audit, seal, tenant
 from .tables import audits, commands, connections, control, profiles, settings, tasks, users
@@ -28,6 +29,10 @@ class Command(BaseModel):
 
 class Pause(Command):
     paused: bool
+
+
+class GateState(Pause):
+    locked: bool
 
 
 class Preferences(Command):
@@ -111,15 +116,22 @@ def profile(request: Request, owner: Owner) -> Result:
 
 
 @controls.get("/system/kill-switch")
-def gate(request: Request, owner: Owner) -> Pause:
+def gate(request: Request, owner: Owner) -> GateState:
     with tenant(request.app.state.db, owner) as conn:
-        return Pause(paused=conn.execute(select(control.c.is_system_paused)).scalar_one())
+        return GateState(
+            paused=private_preview()
+            or conn.execute(select(control.c.is_system_paused)).scalar_one(),
+            locked=private_preview(),
+        )
 
 
 @controls.post("/system/kill-switch", response_model=Pause)
 def kill_switch(payload: Pause, request: Request, owner: Owner, key: Key) -> Result:
     if owner != PRIVATE_OWNER:
         raise HTTPException(403, "Only the private operator can change the global pause.")
+
+    if private_preview() and not payload.paused:
+        raise HTTPException(403, "External automation is locked for this preview.")
 
     def change(conn: Connection) -> Result:
         conn.execute(
@@ -142,6 +154,10 @@ def kill_switch(payload: Pause, request: Request, owner: Owner, key: Key) -> Res
 @controls.patch("/profile/settings")
 def preferences(payload: Preferences, request: Request, owner: Owner, key: Key) -> Result:
     values = payload.model_dump(exclude_unset=True)
+    if private_preview() and any(
+        values.get(k) for k in ("outbound_enabled", "auto_trash_scams", "auto_archive_rejections")
+    ):
+        raise HTTPException(403, "External automation is locked for this preview.")
     if not values or None in values.values():
         raise HTTPException(422, "Supply one or more valid settings.")
 
@@ -175,6 +191,8 @@ def preferences(payload: Preferences, request: Request, owner: Owner, key: Key) 
 def store_secret(
     provider: Provider, payload: Secret, request: Request, owner: Owner, key: Key
 ) -> Result:
+    if private_preview():
+        raise HTTPException(403, "Integration connections are disabled for this preview.")
     credential = payload.credential.get_secret_value()
 
     def change(conn: Connection) -> Result:
@@ -212,6 +230,9 @@ def revoke(provider: Provider, request: Request, owner: Owner, key: Key) -> Resu
 
 @controls.post("/tasks/probe", status_code=202)
 def enqueue_probe(request: Request, owner: Owner, key: Key) -> Result:
+    if private_preview():
+        raise HTTPException(403, "Background tasks are disabled for this preview.")
+
     def change(conn: Connection) -> Result:
         task = conn.scalar(
             insert(tasks).values(user_id=owner, kind="local_probe").returning(tasks.c.id)

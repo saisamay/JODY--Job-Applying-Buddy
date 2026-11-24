@@ -421,6 +421,8 @@ export function Dashboard({
   data,
   profile,
   paused,
+  locked,
+  uploadLimitMiB,
   command,
 }: {
   view: string;
@@ -428,6 +430,8 @@ export function Dashboard({
   sources: ProjectSource[];
   profile: ProfileView;
   paused: boolean;
+  locked: boolean;
+  uploadLimitMiB: number;
   command: string;
 }) {
   const [mobile, setMobile] = useState(false);
@@ -545,7 +549,13 @@ export function Dashboard({
               sample="Interview invitation · An employer has requested a first conversation."
             />
           )}
-          {id === "resumes" && <Resumes profile={profile} command={command} />}
+          {id === "resumes" && (
+            <Resumes
+              profile={profile}
+              command={command}
+              uploadLimitMiB={uploadLimitMiB}
+            />
+          )}
           {id === "projects" && (
             <div className="work-split">
               <div className="vertical">
@@ -614,7 +624,13 @@ export function Dashboard({
                   </div>
                 ))}
               </section>
-              <Credentials stored={data.integrations} />
+              {locked ? (
+                <p className="surface">
+                  External integrations are disabled for this private preview.
+                </p>
+              ) : (
+                <Credentials stored={data.integrations} />
+              )}
             </div>
           )}
           {id === "settings" && (
@@ -651,7 +667,18 @@ export function Dashboard({
           )}
           <div className="pause-control">
             <CirclePause size={18} />
-            <PauseForm key={String(paused)} paused={paused} command={command} />
+            {locked ? (
+              <p role="status">
+                External automation is locked for this preview. Background tasks
+                are paused.
+              </p>
+            ) : (
+              <PauseForm
+                key={String(paused)}
+                paused={paused}
+                command={command}
+              />
+            )}
           </div>
         </main>
       </div>

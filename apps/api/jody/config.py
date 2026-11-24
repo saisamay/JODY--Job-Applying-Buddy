@@ -1,10 +1,15 @@
 import os
 
-from sqlalchemy import URL
+from sqlalchemy import URL, make_url
 
 
 def database_url() -> str | URL:
-    return os.environ.get("DATABASE_URL") or URL.create(
+    if value := os.getenv("DATABASE_URL"):
+        url = make_url(value)
+        if url.drivername in {"postgresql", "postgres"}:
+            return url.set(drivername="postgresql+psycopg")
+        return url
+    return URL.create(
         "postgresql+psycopg",
         username="jody",
         password=os.environ["POSTGRES_PASSWORD"],
@@ -29,3 +34,7 @@ def runtime_url() -> URL:
     admin = make_url(database_url())
     suffix = sha256((admin.database or "").encode()).hexdigest()[:12]
     return admin.set(username=f"jody_app_{suffix}", password=os.environ["JODY_DB_APP_PASSWORD"])
+
+
+def private_preview() -> bool:
+    return os.getenv("JODY_PRIVATE_PREVIEW") == "1" or os.getenv("RENDER") == "true"

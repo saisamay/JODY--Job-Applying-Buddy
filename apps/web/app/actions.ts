@@ -99,8 +99,9 @@ export async function uploadResume(_: string, form: FormData) {
   try {
     const token = await ownerToken();
     const pdf = form.get("file");
-    if (!(pdf instanceof File) || !pdf.size || pdf.size > 5242880)
-      return "Select a PDF up to 5 MiB.";
+    const limit = process.env.VERCEL ? 4 : 5;
+    if (!(pdf instanceof File) || !pdf.size || pdf.size > limit * 1048576)
+      return `Select a PDF up to ${limit} MiB.`;
     await candidateApi.upload(
       token,
       pdf,

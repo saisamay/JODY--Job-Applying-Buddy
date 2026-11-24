@@ -1,5 +1,7 @@
 # JODY next step
 
+For a hosted preview, resume from the [private preview runbook](PRIVATE_PREVIEW.md). Verify the deployment SHA, free resource plans, both HTTPS origins and the authenticated smoke before recording provider success. Keep external automation locked.
+
 **Prompt 8 can compile and evaluate an owner-reviewed proposal.** Start with the application ID, resume version ID and baseline ID returned by the career proposal command. The [career architecture](ARCHITECTURE.md#career-intelligence-and-evidence-backed-drafts) documents the import, review, comparison and MCP boundaries.
 
 1. Start with a synthetic golden application containing dates, education, employment, punctuation and an unresolved required field. Read the proposed fragment and its claim manifest through the private API. Check the current evidence review and exclusions before rendering.

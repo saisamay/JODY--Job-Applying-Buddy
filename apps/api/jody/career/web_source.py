@@ -9,8 +9,12 @@ from urllib.parse import urljoin, urlsplit
 
 from fastapi import HTTPException
 
+from ..config import private_preview
+
 
 def fetch(url: str, *, html: bool, redirects: int = 2) -> bytes:
+    if private_preview():
+        raise HTTPException(403, "External imports are disabled for this preview.")
     parts = urlsplit(url)
     host = parts.hostname
     if (

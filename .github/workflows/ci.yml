@@ -56,6 +56,20 @@ jobs:
           curl -fsS --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:3000/ -o /dev/null
           set -a; source .env; set +a
           npm run test:browser
+      - name: Verify preview Docker startup and restricted session
+        run: |
+          set -euo pipefail
+          set -a; source .env; set +a
+          export DATABASE_URL="postgresql://jody:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/jody"
+          export REDIS_URL="redis://127.0.0.1:${REDIS_PORT}/0"
+          docker build -f apps/api/Dockerfile -t jody-preview-ci .
+          docker run -d --name jody-preview-ci --network host -e PORT=8012 -e DATABASE_URL -e REDIS_URL -e JODY_DB_APP_PASSWORD -e JODY_ENCRYPTION_KEY -e JODY_OWNER_KEY jody-preview-ci
+          API_BASE_URL=http://127.0.0.1:8012 npm exec -w apps/web -- next start --hostname 127.0.0.1 --port 3012 > "$RUNNER_TEMP/jody-preview-web.log" 2>&1 &
+          web_pid=$!
+          trap 'docker logs --tail 15 jody-preview-ci; docker rm -f jody-preview-ci >/dev/null; kill "$web_pid" || true' EXIT
+          curl -fsS --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:8012/health/ready
+          curl -fsS --retry 15 --retry-all-errors --retry-delay 1 http://127.0.0.1:3012/ -o /dev/null
+          WEB_BASE_URL=http://127.0.0.1:3012 API_BASE_URL=http://127.0.0.1:8012 node tests/preview.mjs
       - name: Show service startup diagnostics on failure
         if: failure()
         run: |

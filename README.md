@@ -110,3 +110,5 @@ Use the server-side `candidateApi` in apps/web/lib/api.ts and its generated Open
 Use a UUID Idempotency-Key on mutations. Keep the same key for a retry of the same command. Reload after a 409 revision conflict. The preview is read-only. The existing PATCH /api/v1/profile/settings endpoint handles permission changes. Re-read the candidate after changing permissions. Onboarding confirmation and account-level permissions never authorize sending an email or submitting an application. Those operations still require separate approval for the exact destination and content.
 
 Name, email and public profile links keep their original database columns. Additional personal fields, pending suggestions, evidence notes and resume bytes use authenticated encryption with user-bound context. Resume lookup, download and mutation also enforce database row-level security. Audits and command receipts contain revision/ID metadata. The migration neither seeds real personal information nor imports unverifiable claims from opaque legacy vault data.
+
+For the private Vercel and Render preview, see the [deployment runbook and environment checklist](docs/PRIVATE_PREVIEW.md).

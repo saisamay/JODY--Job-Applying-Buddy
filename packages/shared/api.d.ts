@@ -925,6 +925,13 @@ export interface components {
       /** Application Preferences */
       application_preferences?: string | null;
     };
+    /** GateState */
+    GateState: {
+      /** Paused */
+      paused: boolean;
+      /** Locked */
+      locked: boolean;
+    };
     /** Grant */
     Grant: {
       /**
@@ -1603,7 +1610,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["Pause"];
+          "application/json": components["schemas"]["GateState"];
         };
       };
     };

@@ -56,6 +56,8 @@ export default async function Workspace({
         resumes: candidate.resumes,
       }}
       paused={gate.paused}
+      locked={gate.locked}
+      uploadLimitMiB={process.env.VERCEL ? 4 : 5}
       command={randomUUID()}
     />
   );
