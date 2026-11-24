@@ -127,3 +127,11 @@ These rows capture the owner's phase 1 foundation instructions. The original pro
 | UI01 | UI brief A | P0 | Public JODY landing page and interactive product preview. | Visitors can search the labeled sample openings, reach discovery, matching and privacy sections, switch preview views and navigate to sign-in on mobile and desktop. | Tested |
 | UI02 | UI brief B | P0 | Private career workspace with twelve navigable sections. | Signed-in owner can inspect jobs and trust, group applications by stage, read approvals and activity, manage resumes and policy entries, and pause work. Backend-backed views distinguish empty data, examples and unavailable operations. | Tested |
 | UI03 | UI brief, verification | P0 | Responsive and accessible interactions and screenshot evidence. | Exercise both experiences and workspace navigation at 360, 390, 768, 1024 and 1440 pixels, check overflow and automated accessibility, and retain a pair of synthetic captures at each width. | Tested |
+
+## Private preview acceptance supplement
+
+| ID | Source | Priority | Requirement | Acceptance criteria | Status |
+|---|---|---|---|---|---|
+| DP01 | Deployment brief | P0 | Protected Vercel frontend and free Render backend with PostgreSQL. | Both providers report the pushed revision, anonymous frontend requests require Vercel Authentication, and live readiness confirms migrated PostgreSQL with pgvector and Key Value. | Tested |
+| DP02 | Deployment brief | P0 | Secure owner access and disabled external automation. | A hosted browser verifies secure cookies, owner-scoped reads and sign-out revocation. Owner requests to resume automation are denied. No paid or background worker is configured. | Tested |
+| DP03 | Deployment brief | P0 | Reproducible deployment and operator handoff. | Verify the Docker workflow and live desktop/mobile navigation. Record environment ownership, live URLs, exact free database expiry and persistence limits. | Tested |

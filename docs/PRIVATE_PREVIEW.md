@@ -2,6 +2,18 @@
 
 JODY uses a protected Vercel Preview deployment for Next.js and one Render Free Docker web service. Both communicate over provider-managed HTTPS. The browser posts same-origin Next server actions. Only the frontend server calls FastAPI. The API issues an eight-hour opaque owner session and stores its digest. Next sets a host-only, HttpOnly, Secure, SameSite=Strict cookie. FastAPI grants no cross-origin browser access. Its health endpoints are public, and workspace data requires a bearer session.
 
+## Verified release on 24 November 2026
+
+| Target | Verified deployment |
+|---|---|
+| Vercel Hobby, Preview | [Open the private JODY frontend](https://jody-private-preview-mypmjjcsm-saisamaysilla-7057.vercel.app). Sign in to the authorized Vercel account, then enter the preview owner key in JODY. |
+| Render Free API | [Database and queue readiness](https://jody-preview-api-xonu.onrender.com/health/ready) · [Liveness](https://jody-preview-api-xonu.onrender.com/health/live) |
+| Application revision | `6e2ee8af0d90a8b763b4b550f512184bac90371b` on main, verified against both providers. [GitHub Actions](https://github.com/saisamay/JODY--Job-Applying-Buddy/actions/runs/45325199972) |
+| Database expiry | **24 December 2026 at 09:47 IST**. PostgreSQL 16, 1 GB Free, internal access only. |
+| Owner credentials | On the owner's workstation, the mode-0600 file `~/.config/jody-preview/render-xonu.env` contains `JODY_OWNER_KEY` for sign-in and the separate encryption key. |
+
+Vercel required the first deployment of this new project to target Production. The owner authorized an empty 404-only initializer with production domain assignment skipped. The application and its API origin were deployed only to Preview. Future releases in this project can deploy directly to Preview.
+
 ## Environment checklist
 
 | Service and scope | Variable | Value or source |
@@ -21,7 +33,7 @@ Generate each manual secret separately using a password manager or `openssl rand
 
 1. Use the confirmed Render workspace and an eligible personal Vercel Hobby account. In Render billing, verify available free instance hours, pipeline minutes, bandwidth and a zero spend limit for any supplementary usage. Confirm that the free Postgres and Key Value slots are available.
 2. Open the Blueprint for the pushed branch, review the exact resource plan, and enter the two manual secrets. Apply only if the web service, database and Key Value are all Free and the estimate fits the approved budget. All three use Oregon for private connectivity. PostgreSQL and Key Value block external connections. Use a fresh dedicated preview database. [Render Blueprint import](https://dashboard.render.com/blueprint/new?repo=https://github.com/saisamay/JODY--Job-Applying-Buddy)
-3. The container startup runs Alembic up to head under a transaction-scoped PostgreSQL advisory lock. It provisions a restricted login under a second lock, removes admin credentials from the API process environment, and starts one Uvicorn process on the assigned port. A failure leaves the service unavailable. For a retry, retain the database, runtime-role password and encryption key. A runtime password change requires updating the PostgreSQL role password as well. The owner login checks active tenant row security before the service accepts traffic.
+3. The container startup runs Alembic up to head under a transaction-scoped PostgreSQL advisory lock. It provisions a restricted login under a second lock, removes admin credentials from the API process environment, and starts one Uvicorn process on the assigned port. A failure leaves the service unavailable. For a retry, retain the database, runtime-role password and encryption key. A runtime password change requires updating the PostgreSQL role password as well. API startup checks active tenant row security before the service accepts traffic.
 4. Copy the actual HTTPS service URL from Render. Request `/health/live` and `/health/ready`. Readiness requires the migration revision, pgvector extension and Redis ping. Use a signed request to verify the owner session as described below.
 5. From the repository root, use `vercel login` and `vercel link` for the intended Hobby project. In Project Settings set Root Directory to `apps/web`, enable access to source files outside the root for npm workspaces and shared types, choose Next.js and Node 24.x, and retain the default install command. The checked-in Vercel configuration uses the web workspace build script. Enable Vercel Authentication with Standard Protection before deployment. Leave the production domain unused for this private preview. Use preview-only CLI deployments. Git deployments are disabled in the configuration.
 6. Run `vercel env add API_BASE_URL preview` and paste the verified Render HTTPS origin at the prompt. Run `vercel deploy` from the linked repository root. Inspect the returned deployment URL with `vercel inspect <preview-url>`. Verify an anonymous visit reaches Vercel Authentication. Reapply the Preview deployment after changing its environment. [Vercel deployment protection](https://vercel.com/docs/deployment-protection)
