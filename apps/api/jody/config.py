@@ -38,3 +38,20 @@ def runtime_url() -> URL:
 
 def private_preview() -> bool:
     return os.getenv("JODY_PRIVATE_PREVIEW") == "1" or os.getenv("RENDER") == "true"
+
+
+def ollama_address() -> tuple[str, int]:
+    from urllib.parse import urlsplit
+
+    address = urlsplit(os.getenv("JODY_OLLAMA_BASE_URL") or "http://127.0.0.1:11434")
+    if (
+        address.scheme != "http"
+        or address.hostname not in {"127.0.0.1", "::1"}
+        or address.username is not None
+        or address.password is not None
+        or address.path not in {"", "/"}
+        or address.query
+        or address.fragment
+    ):
+        raise ValueError("Choose a loopback HTTP origin for local Ollama.")
+    return address.hostname, address.port or 80

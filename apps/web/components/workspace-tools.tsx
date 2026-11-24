@@ -17,6 +17,7 @@ import {
   saveLinks,
   savePreferences,
   storeCredential,
+  forgetCredential,
   uploadResume,
 } from "../app/actions";
 import type { Comparison, ResumeInfo, WorkspaceJob } from "../lib/api";
@@ -280,7 +281,9 @@ export function Credentials({ stored }: { stored: string[] }) {
           {[
             ["github", "GitHub"],
             ["gmail", "Gmail"],
-            ["telegram", "Telegram"],
+            ["gemini", "Gemini"],
+            ["groq", "Groq"],
+            ["openrouter", "OpenRouter"],
             ["resume_git", "Resume Git"],
           ].map(([v, t]) => (
             <option key={v} value={v}>
@@ -309,6 +312,19 @@ export function Credentials({ stored }: { stored: string[] }) {
           />
         </label>
       </ActionForm>
+      {stored.includes(provider) && (
+        <ActionForm
+          key={"remove-" + provider}
+          action={forgetCredential}
+          label="Remove stored credential"
+        >
+          <input type="hidden" name="provider" value={provider} />
+          <label>
+            <input type="checkbox" name="confirmed" required /> Remove this
+            credential from my JODY vault
+          </label>
+        </ActionForm>
+      )}
     </section>
   );
 }

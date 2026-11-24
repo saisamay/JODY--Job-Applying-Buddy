@@ -1,0 +1,10 @@
+[Unit]
+Description=Poll the local JODY probe queue while Ubuntu is awake
+
+[Timer]
+OnStartupSec=30s
+OnUnitInactiveSec=60s
+Unit=jody-probe.service
+
+[Install]
+WantedBy=timers.target

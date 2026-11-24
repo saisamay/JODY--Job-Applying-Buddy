@@ -21,6 +21,7 @@ from .career.routes import career
 from .config import redis_url
 from .contracts import Error, Live, Ready
 from .controls import controls
+from .integration_setup import callback_contract
 from .routes import router
 from .security import encryption_key, runtime_engine
 from .workspace import workspace
@@ -49,6 +50,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="JODY", version="0.1.0", lifespan=lifespan)
 app.include_router(router)
+app.include_router(callback_contract)
 app.include_router(controls)
 app.include_router(candidate)
 app.include_router(resumes_api)

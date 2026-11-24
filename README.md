@@ -112,3 +112,5 @@ Use a UUID Idempotency-Key on mutations. Keep the same key for a retry of the sa
 Name, email and public profile links keep their original database columns. Additional personal fields, pending suggestions, evidence notes and resume bytes use authenticated encryption with user-bound context. Resume lookup, download and mutation also enforce database row-level security. Audits and command receipts contain revision/ID metadata. The migration neither seeds real personal information nor imports unverifiable claims from opaque legacy vault data.
 
 For the private Vercel and Render preview, see the [deployment runbook and environment checklist](docs/PRIVATE_PREVIEW.md).
+
+For Prompt 5.5, start with the [step-by-step credential configuration and verification guide](docs/SECRETS_CHECKLIST.md). The [integration contract](docs/INTEGRATIONS.md) distinguishes operator checks, current private features and planned provider connections.

@@ -11,7 +11,8 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /** Identity */
+    get: operations["identity_api_v1_session_get"];
     put?: never;
     /** Login */
     post: operations["login_api_v1_session_post"];
@@ -67,6 +68,23 @@ export interface paths {
     put?: never;
     /** Intake */
     post: operations["intake_api_v1_jobs_manual_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/integrations/gmail/callback": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Inactive Callback */
+    get: operations["inactive_callback_api_v1_integrations_gmail_callback_get"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -802,6 +820,18 @@ export interface components {
       /** Evidence */
       evidence: components["schemas"]["Evidence"][];
     };
+    /**
+     * ConnectionState
+     * @enum {string}
+     */
+    ConnectionState:
+      | "Disconnected"
+      | "Authorization required"
+      | "Connecting"
+      | "Connected and verified"
+      | "Expired"
+      | "Failed"
+      | "Disabled";
     /** Decisions */
     Decisions: {
       /** Revision */
@@ -944,6 +974,16 @@ export interface components {
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
+    };
+    /** IntegrationCard */
+    IntegrationCard: {
+      /** Provider */
+      provider: string;
+      /** Label */
+      label: string;
+      state: components["schemas"]["ConnectionState"];
+      /** Instruction */
+      instruction: string;
     };
     /** Job */
     Job: {
@@ -1346,6 +1386,8 @@ export interface components {
       blocklist: components["schemas"]["Entry"][];
       /** Integrations */
       integrations: string[];
+      /** Integration Cards */
+      integration_cards: components["schemas"]["IntegrationCard"][];
       /** Total Jobs */
       total_jobs: number;
       /** Total Applications */
@@ -1366,6 +1408,46 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  identity_api_v1_session_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
   login_api_v1_session_post: {
     parameters: {
       query?: never;
@@ -1573,6 +1655,26 @@ export interface operations {
       };
     };
   };
+  inactive_callback_api_v1_integrations_gmail_callback_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
   profile_api_v1_profile_get: {
     parameters: {
       query?: never;
@@ -1694,7 +1796,14 @@ export interface operations {
         "Idempotency-Key": string;
       };
       path: {
-        provider: "github" | "gmail" | "telegram" | "resume_git";
+        provider:
+          | "github"
+          | "gmail"
+          | "telegram"
+          | "resume_git"
+          | "gemini"
+          | "groq"
+          | "openrouter";
       };
       cookie?: never;
     };
@@ -1733,7 +1842,14 @@ export interface operations {
         "Idempotency-Key": string;
       };
       path: {
-        provider: "github" | "gmail" | "telegram" | "resume_git";
+        provider:
+          | "github"
+          | "gmail"
+          | "telegram"
+          | "resume_git"
+          | "gemini"
+          | "groq"
+          | "openrouter";
       };
       cookie?: never;
     };

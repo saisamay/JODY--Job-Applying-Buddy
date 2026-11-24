@@ -7,11 +7,11 @@ from redis import Redis
 from sqlalchemy import Engine, func, select, text, update
 
 from .config import private_preview
-from .security import PRIVATE_OWNER, audit, tenant
+from .security import audit, tenant
 from .tables import tasks, users
 
 
-def tick(db: Engine, broker: Redis, user: UUID = PRIVATE_OWNER) -> bool:
+def tick(db: Engine, broker: Redis, user: UUID) -> bool:
     if private_preview():
         return False
     queue = f"jody:{db.url.database}:probe:{user}"

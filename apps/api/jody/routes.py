@@ -57,6 +57,11 @@ def login(payload: Login, request: Request) -> SessionToken:
     return SessionToken(token=token, max_age=SESSION_SECONDS)
 
 
+@router.get("/session")
+def identity(owner: Owner) -> dict[str, UUID]:
+    return {"user_id": owner}
+
+
 @router.delete("/session", status_code=204)
 def logout(
     request: Request, owner: Owner, token: Annotated[str, Depends(session_digest)]

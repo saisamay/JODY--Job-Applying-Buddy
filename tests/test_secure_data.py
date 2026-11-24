@@ -202,7 +202,13 @@ def test_encrypted_integration_and_replay(client, auth, admin_db, second_auth):
                 unseal(app.state.secret_key, user, provider, *args)
     assert client.get(API + "/profile", headers=second_auth).json()["integrations"] == []
     audit = client.get(API + "/audit", headers=auth)
-    assert sum(r["action"] == "integration.store" for r in audit.json()) == 1
+    assert (
+        sum(
+            r["action"] == "integration.store" and r["resource_id"] == headers["Idempotency-Key"]
+            for r in audit.json()
+        )
+        == 1
+    )
     assert value not in audit.text and value not in client.get(API + "/profile", headers=auth).text
     assert client.delete(url, headers=mutation(auth)).status_code == 200
     assert client.get(API + "/profile", headers=auth).json()["integrations"] == []
@@ -218,7 +224,7 @@ def test_global_gate_queue_recovery_and_replay(client, auth, second_auth, admin_
     assert client.post(API + "/tasks/probe", headers=headers).json() == body
     task_id = body["id"]
     assert client.get(API + "/tasks/" + task_id, headers=second_auth).status_code == 404
-    assert not tick(app.state.db, app.state.queue)
+    assert not tick(app.state.db, app.state.queue, PRIVATE_OWNER)
     with pytest.raises(IntegrityError), admin_db.begin() as conn:
         conn.execute(update(tasks).where(tasks.c.id == task_id).values(status="succeeded"))
     resume = mutation(auth)
@@ -232,14 +238,14 @@ def test_global_gate_queue_recovery_and_replay(client, auth, second_auth, admin_
     # Publish then lose the Redis list before consumption. Simulate the republish deadline.
     with monkeypatch.context() as patch:
         patch.setattr(app.state.queue, "lpop", lambda key: None)
-        assert not tick(app.state.db, app.state.queue)
+        assert not tick(app.state.db, app.state.queue, PRIVATE_OWNER)
     assert app.state.queue.lrange(queue, 0, -1) == [task_id.encode()]
     app.state.queue.delete(queue)
     with admin_db.begin() as conn:
         conn.execute(update(tasks).where(tasks.c.id == task_id).values(next_publish_at=func.now()))
-    assert tick(app.state.db, app.state.queue)
+    assert tick(app.state.db, app.state.queue, PRIVATE_OWNER)
     app.state.queue.rpush(queue, task_id)
-    assert not tick(app.state.db, app.state.queue)
+    assert not tick(app.state.db, app.state.queue, PRIVATE_OWNER)
     assert client.get(API + "/tasks/" + task_id, headers=auth).json()["status"] == "succeeded"
     assert client.post(gate, headers=mutation(auth), json={"paused": True}).status_code == 200
     assert (
@@ -262,7 +268,7 @@ def test_pause_transaction_fences_racing_worker(client, auth, admin_db):
     with ThreadPoolExecutor(max_workers=1) as pool:
         with admin_db.begin() as pausing:
             pausing.execute(update(control).values(is_system_paused=True))
-            worker = pool.submit(tick, app.state.db, app.state.queue)
+            worker = pool.submit(tick, app.state.db, app.state.queue, PRIVATE_OWNER)
             deadline = time.monotonic() + 3
             while time.monotonic() < deadline:
                 with admin_db.connect() as observer:
@@ -334,3 +340,22 @@ def test_workspace_reads_tenant_records_and_policies(client, auth, second_auth):
             == 200
         )
         assert all(r["title"] != label for r in client.get(path, headers=auth).json()[field])
+
+
+def test_byok_replacement_and_removal_are_scoped(client, auth, second_auth):
+    route = API + "/integrations/gemini"
+    for ident in (auth, second_auth):
+        assert (
+            client.put(
+                route, headers=mutation(ident), json={"credential": str(uuid4())}
+            ).status_code
+            == 200
+        )
+    assert client.delete(route, headers=mutation(auth)).status_code == 200
+
+    def state(ident):
+        rows = client.get(API + "/workspace", headers=ident).json()["integration_cards"]
+        return next(row["state"] for row in rows if row["provider"] == "gemini")
+
+    assert state(auth) == "Disconnected" and state(second_auth) == "Authorization required"
+    assert client.delete(route, headers=mutation(second_auth)).status_code == 200

@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from jody.career.inference import Mock, configured
+from jody.security import PRIVATE_OWNER
 from jody.worker import tick
 
 
@@ -8,7 +9,7 @@ def test_preview_lock_cannot_be_overridden(client, auth, monkeypatch):
     monkeypatch.setenv("JODY_PRIVATE_PREVIEW", "1")
     monkeypatch.setenv("JODY_AI_PROVIDER", "ollama")
     assert isinstance(configured(), Mock)
-    assert not tick(client.app.state.db, client.app.state.queue)
+    assert not tick(client.app.state.db, client.app.state.queue, PRIVATE_OWNER)
     gate = "/api/v1/system/kill-switch"
     assert client.get(gate).status_code == 401
     assert client.get(gate, headers=auth).json() == {"paused": True, "locked": True}

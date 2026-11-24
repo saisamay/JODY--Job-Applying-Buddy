@@ -135,3 +135,20 @@ These rows capture the owner's phase 1 foundation instructions. The original pro
 | DP01 | Deployment brief | P0 | Protected Vercel frontend and free Render backend with PostgreSQL. | Both providers report the pushed revision, anonymous frontend requests require Vercel Authentication, and live readiness confirms migrated PostgreSQL with pgvector and Key Value. | Tested |
 | DP02 | Deployment brief | P0 | Secure owner access and disabled external automation. | A hosted browser verifies secure cookies, owner-scoped reads and sign-out revocation. Owner requests to resume automation are denied. No paid or background worker is configured. | Tested |
 | DP03 | Deployment brief | P0 | Reproducible deployment and operator handoff. | Verify the Docker workflow and live desktop/mobile navigation. Record environment ownership, live URLs, exact free database expiry and persistence limits. | Tested |
+
+## Prompt 5.5 acceptance supplement
+
+| ID | Source | Priority | Requirement | Acceptance criteria | Status |
+|---|---|---|---|---|---|
+| IC01 | Autonomous spec §§1–4, 18; 5.5 §1 | P0 | Automatic discovery through permitted sources alongside supplementary manual intake. | All sources enter the same attributable, deduplicated pipeline; no action can bypass trust, evidence, pause or approval. Read-only pilot and subsequent dispatch remain staged. | Planned |
+| IC02 | 5.5 §2 | P0 | Multi-user identity and onboarding. | Verified/recovered identity maps to a unique user, blank defaults, isolated resumable settings and verified disconnect/deletion. No public registration before two-tenant release gates. | Partial |
+| IC03 | 5.5 §3 | P0 | Evidence-based integration state contract. | Seven typed states. Private UI distinguishes stored credentials and disabled adapters; tenant authorization and removal tested. Durable verification receipts required for persistent verified badges. | Partial |
+| IC04 | 5.5 §3; owner setup | P0 | Official read-only Gmail setup and refresh. | Exact callback, one-use state, browser binding, PKCE, scope validation, refresh and metadata probe verified with fixtures. Hosted tenant grant lifecycle and real owner verification outstanding. | Partial |
+| IC05 | 5.5 §3 | P0 | Read-only private Git and multiple resume formats. | Verify selected repository and pinned file; preserve immutable originals. Test bounded LaTeX ZIP import and private sync before enablement. | Partial |
+| IC06 | 5.5 §§3,7 | P1 | Private notifications and single-use Telegram linking. | Verify bot identity separately. Bind expiring code to sender and tenant once; prevent replay and cross-user command execution before any delivery. | Partial |
+| IC07 | 5.5 §3 | P1 | Policy-compliant WhatsApp and LinkedIn source boundaries. | Prevent storage before allowlist, unpair/revoke, and require independent platform permission. Permitted Gmail alerts form the LinkedIn automation path. | Planned |
+| IC08 | 5.5 §4 | P0 | Per-task, consented, zero-spend model routing. | Local optional model and encrypted tenant BYOK, catalog and quota checks, deterministic decisions; live hosted calls require proven free capacity and task-specific consent. | Partial |
+| IC09 | 5.5 §5 | P0 | Rehearse database portability before cutover. | Encrypted dump restores on isolated PG16, restricted grants and scopes pass, vector available, all application counts match, restored canary decrypts. | Tested |
+| IC10 | 5.5 §5 | P0 | Qualify Neon and manage Render expiry. | Validate direct and pooled access, private hosted export, decryption and rollback in a separate branch before explicitly approved cutover. | Planned |
+| IC11 | 5.5 §6 | P1 | Card-free worker runtime and Ubuntu fallback. | Identify card-free candidate, document limits, validate Ubuntu service/timer definitions and existing durable probe. Require restart/uptime trial before claiming hosted continuity. | Partial |
+| IC12 | 5.5 §§8–9 | P0 | Operator configuration and checkpoint. | Every provider has names, storage location, owner/user boundary, safe check, expected result and failure handling; placeholders only, tested change pushed, existing preview preserved. | Tested |

@@ -12,3 +12,5 @@ node_modules/
 next-env.d.ts
 docs/JODY_PRD.pdf
 .vercel/
+
+docs/JODY_AUTONOMOUS_SPEC.pdf

@@ -608,19 +608,13 @@ export function Dashboard({
             <div className="work-split">
               <section className="surface">
                 <PanelHead icon={Plug} title="Integration status" />
-                {[
-                  ["github", "GitHub"],
-                  ["gmail", "Gmail"],
-                  ["telegram", "Telegram"],
-                  ["resume_git", "Resume Git"],
-                ].map(([code, name]) => (
-                  <div className="connection" key={code}>
-                    <b>{name}</b>
-                    <span className="tag">
-                      {data.integrations.includes(code)
-                        ? "Credential stored"
-                        : "Unconfigured"}
-                    </span>
+                {data.integration_cards.map((card) => (
+                  <div className="connection" key={card.provider}>
+                    <div>
+                      <b>{card.label}</b>
+                      <p className="muted">{card.instruction}</p>
+                    </div>
+                    <span className="tag">{card.state}</span>
                   </div>
                 ))}
               </section>

@@ -182,6 +182,28 @@ test(
           if (width === 390) await accessibility(page);
         }
       }
+      await selectView(page, "Integrations");
+      await page
+        .getByRole("combobox", { name: "Provider" })
+        .selectOption("groq");
+      await page
+        .getByLabel("Access credential")
+        .fill("synthetic-browser-fixture");
+      await page
+        .getByRole("button", { name: "Store credential", exact: true })
+        .click();
+      const groqCard = page
+        .locator(".connection")
+        .filter({ has: page.getByText("Groq", { exact: true }) });
+      await expect(groqCard).toContainText("Authorization required");
+      await page
+        .getByLabel("Remove this credential from my JODY vault")
+        .check();
+      await page
+        .getByRole("button", { name: "Remove stored credential" })
+        .click();
+      await expect(groqCard).toContainText("Disconnected");
+      await selectView(page, "Overview");
       await expect(page.getByText("Background tasks paused")).toBeVisible();
       await page.getByRole("button", { name: "Resume tasks" }).click();
       await expect(page.getByText("Background tasks active")).toBeVisible();

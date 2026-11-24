@@ -10,7 +10,9 @@ from pydantic import BaseModel, StringConstraints, ValidationInfo, field_validat
 from sqlalchemy import Connection, Select, Table, delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from .config import private_preview
 from .controls import Key, Result, execute
+from .integration_setup import IntegrationCard, cards
 from .routes import Owner
 from .security import tenant
 from .tables import (
@@ -63,6 +65,7 @@ class Workspace(BaseModel):
     allowlist: list[Entry]
     blocklist: list[Entry]
     integrations: list[str]
+    integration_cards: list[IntegrationCard]
     total_jobs: int
     total_applications: int
     pending_approvals: int
@@ -117,6 +120,7 @@ def overview(request: Request, owner: Owner) -> Workspace:
         thresholds = conn.execute(
             select(settings.c.min_trust_score_auto_apply, settings.c.min_ats_score_threshold)
         ).one()
+        stored = list(conn.scalars(select(connections.c.provider).order_by(connections.c.provider)))
         return Workspace(
             jobs=[JobView.model_validate(r) for r in conn.execute(query).mappings()],
             applications=recent(
@@ -195,9 +199,8 @@ def overview(request: Request, owner: Owner) -> Workspace:
                 ),
                 blocks,
             ),
-            integrations=list(
-                conn.scalars(select(connections.c.provider).order_by(connections.c.provider))
-            ),
+            integrations=stored,
+            integration_cards=cards(stored, private_preview()),
             total_jobs=conn.scalar(select(func.count()).select_from(jobs)) or 0,
             total_applications=conn.scalar(select(func.count()).select_from(applications)) or 0,
             pending_approvals=conn.scalar(

@@ -230,6 +230,14 @@ export const workspaceApi = {
       { min_trust_score_auto_apply: trust, min_ats_score_threshold: ats },
       key,
     ),
+  forgetCredential: (token: string, provider: string, key: string) =>
+    request(
+      "/api/v1/integrations/" + encodeURIComponent(provider),
+      "DELETE",
+      token,
+      undefined,
+      key,
+    ),
   credential: (token: string, provider: string, value: string, key: string) =>
     request(
       "/api/v1/integrations/" + encodeURIComponent(provider),

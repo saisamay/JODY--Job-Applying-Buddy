@@ -19,7 +19,7 @@ from .tables import audits, commands, connections, control, profiles, settings, 
 
 controls = APIRouter(prefix="/api/v1")
 Key = Annotated[UUID, Header(alias="Idempotency-Key")]
-Provider = Literal["github", "gmail", "telegram", "resume_git"]
+Provider = Literal["github", "gmail", "telegram", "resume_git", "gemini", "groq", "openrouter"]
 Result = dict[str, Any]
 
 
@@ -193,6 +193,8 @@ def store_secret(
 ) -> Result:
     if private_preview():
         raise HTTPException(403, "Integration connections are disabled for this preview.")
+    if provider == "telegram":
+        raise HTTPException(422, "Configure the shared bot token on the backend.")
     credential = payload.credential.get_secret_value()
 
     def change(conn: Connection) -> Result:

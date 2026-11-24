@@ -151,7 +151,11 @@ export async function savePreferences(_: string, form: FormData) {
 }
 export async function storeCredential(_: string, form: FormData) {
   const provider = String(form.get("provider"));
-  if (!["github", "gmail", "telegram", "resume_git"].includes(provider))
+  if (
+    !["github", "gmail", "resume_git", "gemini", "groq", "openrouter"].includes(
+      provider,
+    )
+  )
     return "Unknown provider.";
   try {
     await workspaceApi.credential(
@@ -166,6 +170,22 @@ export async function storeCredential(_: string, form: FormData) {
   revalidatePath("/workspace");
   return "Credential stored.";
 }
+export async function forgetCredential(_: string, form: FormData) {
+  const provider = String(form.get("provider"));
+  if (!form.get("confirmed")) return "Confirm removal first.";
+  try {
+    await workspaceApi.forgetCredential(
+      await ownerToken(),
+      provider,
+      randomUUID(),
+    );
+  } catch (error) {
+    return message(error);
+  }
+  revalidatePath("/workspace");
+  return "Credential removed from JODY.";
+}
+
 export async function compareJob(
   id: string,
 ): Promise<{ result?: Comparison; error?: string }> {

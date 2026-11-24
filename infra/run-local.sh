@@ -44,6 +44,9 @@ if [[ "${JODY_WEB_MODE:-dev}" == start ]]; then
 else
   web_args=(dev --webpack)
 fi
-(unset JODY_ENCRYPTION_KEY JODY_DB_APP_PASSWORD JODY_RUNTIME_DATABASE_URL POSTGRES_PASSWORD DATABASE_URL REDIS_URL JODY_OWNER_KEY; cd apps/web && exec ../../node_modules/.bin/next "${web_args[@]}" --hostname 127.0.0.1 --port 3000) &
+(unset JODY_ENCRYPTION_KEY JODY_DB_APP_PASSWORD JODY_RUNTIME_DATABASE_URL POSTGRES_PASSWORD DATABASE_URL REDIS_URL JODY_OWNER_KEY \
+  JODY_NEON_TEST_DATABASE_URL JODY_GOOGLE_CLIENT_SECRET JODY_GOOGLE_CLIENT_ID \
+  JODY_GITHUB_TOKEN JODY_TELEGRAM_BOT_TOKEN JODY_GEMINI_API_KEY JODY_GROQ_API_KEY \
+  JODY_OPENROUTER_API_KEY JODY_NTFY_TOKEN; cd apps/web && exec ../../node_modules/.bin/next "${web_args[@]}" --hostname 127.0.0.1 --port 3000) &
 web_pid=$!
 wait -n "$api_pid" "$web_pid"

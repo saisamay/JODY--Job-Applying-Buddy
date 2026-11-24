@@ -25,6 +25,9 @@ def provision() -> None:
             )
         elif any(current):
             raise ValueError("Application role must be unprivileged.")
+        # Restoring with --no-acl otherwise reinstates default PUBLIC EXECUTE.
+        for signature in ["jody_session_owner(text)", "jody_dispatch_open()"]:
+            db.execute(sql.SQL("REVOKE ALL ON FUNCTION public." + signature + " FROM PUBLIC"))
         for grant in [
             "USAGE ON SCHEMA public",
             "SELECT, INSERT ON career_sources, career_versions, career_cache, career_usage, career_proposals, resume_versions, applications",

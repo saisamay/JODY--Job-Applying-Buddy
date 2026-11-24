@@ -34,6 +34,9 @@ jobs:
           docker compose --env-file .env -f infra/compose.yaml up -d --wait
       - name: Check Python and run integration tests
         run: |
+          if ! test -x /usr/lib/postgresql/16/bin/pg_restore; then
+            sudo apt-get update -qq && sudo apt-get install -y postgresql-client-16
+          fi
           set -a; source .env; set +a
           ruff check apps/api apps/worker tests infra
           ruff format --check apps/api apps/worker tests infra

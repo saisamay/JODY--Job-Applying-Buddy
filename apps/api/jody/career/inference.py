@@ -118,7 +118,10 @@ class Ollama:
         self.identity = f"ollama:{chat}:{embed}"
 
     def post(self, path: str, payload: Json) -> Json:
-        connection = http.client.HTTPConnection("127.0.0.1", 11434, timeout=180)
+        from ..config import ollama_address
+
+        host, port = ollama_address()
+        connection = http.client.HTTPConnection(host, port, timeout=180)
         try:
             connection.request(
                 "POST", path, json.dumps(payload), {"Content-Type": "application/json"}

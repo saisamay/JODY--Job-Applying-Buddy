@@ -1,0 +1,13 @@
+[Unit]
+Description=JODY private owner queue probe
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/JODY--Job-Applying-Buddy
+Environment=PYTHONPATH=apps/api
+EnvironmentFile=%h/.config/jody/worker.env
+ExecStart=%h/projects/JODY--Job-Applying-Buddy/.venv/bin/python apps/worker/run_once.py
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+TimeoutStartSec=45

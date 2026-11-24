@@ -33,3 +33,7 @@ An ID can span phases. For example F11 has a reviewable local email packet in ph
 At every exit follow the [build contract](BUILD_CONTRACT.md), publish the verified commit and preserve the last passing slice. Validate cloud access only when its phase needs it.
 
 Phase 1B delivers the tenant schema, runtime isolation, encrypted connections, default-off policies, dashboard pause and a durable local probe. Use phase 2A to review synthetic GitHub evidence before any live sync or document generation. Production leases, dead-letter handling and uncertain external-effect reconciliation still belong to their provider phases.
+
+## Prompt 5.5 contract and sequence
+
+Prompt 5.5 adds the operator checks, seven-state integration schema, tenant onboarding gates, free compute evaluation and local restore proof. Prompt 6 should start with one authorized, read-only Gmail job-alert ingestion slice on synthetic fixtures, then an opt-in test user; no send/modify scopes. Later slices cover deterministic deduplication and hard filters, evidence/legitimacy gates, versioned resume packages and ATS evaluation, approved application handoff, private notifications and tracking, then multi-user launch hardening. Prompts 6–14 inherit the privacy, entitlement, cost, durable queue and migration gates. Unofficial WhatsApp/feed access requires independent platform permission. A card-free host is an evaluated option until a workload is provisioned and measured. The current preview remains on the November 24 release. [Integration contract](INTEGRATIONS.md)
