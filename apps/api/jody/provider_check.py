@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import re
+import ssl
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
@@ -26,6 +27,19 @@ def setting(name: str) -> str:
     if not value:
         raise CheckError(f"Set JODY_{name} in the private operator environment.")
     return value
+
+
+def ca_bundle() -> str:
+    """Return a concrete system CA bundle when libpq's special 'system' value is unreliable."""
+    candidates = (
+        os.getenv("SSL_CERT_FILE"),
+        ssl.get_default_verify_paths().cafile,
+        "/etc/ssl/certs/ca-certificates.crt",
+    )
+    for candidate in candidates:
+        if candidate and os.path.isfile(candidate):
+            return candidate
+    return "system"
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -95,7 +109,7 @@ def check(provider: str) -> str:
         with psycopg.connect(
             url,
             sslmode="verify-full",
-            sslrootcert="system",
+            sslrootcert=ca_bundle(),
             connect_timeout=10,
             options="-c default_transaction_read_only=on",
         ) as conn:
@@ -142,9 +156,10 @@ def check(provider: str) -> str:
         if any("generateContent" in m.get("supportedGenerationMethods", []) for m in models):
             return "Gemini text generation catalog readable. Confirm free quota in AI Studio."
     if provider == "groq":
-        models = read("https://api.groq.com/openai/v1/models", bearer(setting("GROQ_API_KEY"))).get(
-            "data", []
-        )
+        headers = bearer(setting("GROQ_API_KEY"))
+        # Groq's Cloudflare edge rejects urllib's default Python user agent.
+        headers["User-Agent"] = "JODY/0.1"
+        models = read("https://api.groq.com/openai/v1/models", headers).get("data", [])
         if any(m.get("id") and m.get("active", True) for m in models):
             return "Groq model catalog readable. Confirm free limits in the console."
     if provider == "openrouter":
