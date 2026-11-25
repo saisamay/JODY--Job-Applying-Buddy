@@ -33,8 +33,8 @@ def ca_bundle() -> str:
     """Return a concrete system CA bundle when libpq's special 'system' value is unreliable."""
     candidates = (
         os.getenv("SSL_CERT_FILE"),
-        ssl.get_default_verify_paths().cafile,
         "/etc/ssl/certs/ca-certificates.crt",
+        ssl.get_default_verify_paths().cafile,
     )
     for candidate in candidates:
         if candidate and os.path.isfile(candidate):
