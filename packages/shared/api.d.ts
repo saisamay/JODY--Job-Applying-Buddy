@@ -74,6 +74,108 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/gmail": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read Status */
+    get: operations["read_status_api_v1_gmail_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/gmail/policy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Set Policy */
+    put: operations["set_policy_api_v1_gmail_policy_put"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/gmail/connect": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Connect */
+    post: operations["connect_api_v1_gmail_connect_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/gmail/callback": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Finish */
+    post: operations["finish_api_v1_gmail_callback_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/gmail/disconnect": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Disconnect */
+    post: operations["disconnect_api_v1_gmail_disconnect_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/gmail/sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Sync */
+    post: operations["sync_api_v1_gmail_sync_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/integrations/gmail/callback": {
     parameters: {
       query?: never;
@@ -717,6 +819,16 @@ export interface components {
       /** Enabled */
       enabled: boolean;
     };
+    /** Callback */
+    Callback: {
+      /** State */
+      state: string;
+      /**
+       * Code
+       * @default
+       */
+      code: string;
+    };
     /** Candidate */
     Candidate: {
       /** Revision */
@@ -832,6 +944,11 @@ export interface components {
       | "Expired"
       | "Failed"
       | "Disabled";
+    /** Consent */
+    Consent: {
+      /** Url */
+      url: string;
+    };
     /** Decisions */
     Decisions: {
       /** Revision */
@@ -962,6 +1079,31 @@ export interface components {
       /** Locked */
       locked: boolean;
     };
+    /** GmailStatus */
+    GmailStatus: {
+      /** State */
+      state: string;
+      /** Enabled */
+      enabled: boolean;
+      /** Account */
+      account?: string | null;
+      /**
+       * Reconnect
+       * @default false
+       */
+      reconnect: boolean;
+      /** Last Success */
+      last_success?: string | null;
+      /** Result */
+      result?: string | null;
+      /** Counts */
+      counts?: {
+        [key: string]: number;
+      };
+      /** Retry At */
+      retry_at?: string | null;
+      policy?: components["schemas"]["Policy"] | null;
+    };
     /** Grant */
     Grant: {
       /**
@@ -1015,6 +1157,12 @@ export interface components {
     };
     /** JobView */
     JobView: {
+      /** Gmail Platform */
+      gmail_platform: string | null;
+      /** Employment Type */
+      employment_type: string | null;
+      /** Gmail Review */
+      gmail_review: boolean | null;
       /**
        * Id
        * Format: uuid
@@ -1076,6 +1224,33 @@ export interface components {
       auto_archive_rejections: boolean;
       /** Auto Trash Scams */
       auto_trash_scams: boolean;
+    };
+    /** Policy */
+    Policy: {
+      /** Senders */
+      senders: string[];
+      /**
+       * Label
+       * @default
+       */
+      label: string;
+      /**
+       * Subject
+       * @default
+       */
+      subject: string;
+      /**
+       * Days
+       * @default 3
+       */
+      days: number;
+      /**
+       * Limit
+       * @default 10
+       */
+      limit: number;
+      /** Providers */
+      providers?: ("ollama" | "gemini" | "groq")[];
     };
     /** Preferences */
     Preferences: {
@@ -1366,6 +1541,7 @@ export interface components {
     };
     /** Workspace */
     Workspace: {
+      gmail: components["schemas"]["GmailStatus"];
       /** Jobs */
       jobs: components["schemas"]["JobView"][];
       /** Applications */
@@ -1651,6 +1827,152 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  read_status_api_v1_gmail_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GmailStatus"];
+        };
+      };
+    };
+  };
+  set_policy_api_v1_gmail_policy_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Policy"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GmailStatus"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  connect_api_v1_gmail_connect_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Consent"];
+        };
+      };
+    };
+  };
+  finish_api_v1_gmail_callback_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Callback"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GmailStatus"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  disconnect_api_v1_gmail_disconnect_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GmailStatus"];
+        };
+      };
+    };
+  };
+  sync_api_v1_gmail_sync_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GmailStatus"];
         };
       };
     };

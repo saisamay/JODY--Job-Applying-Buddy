@@ -1,5 +1,3 @@
-# Next authorized development slice
+# Next authorized step
 
-**Stop after Prompt 5.5.** The private preview remains on application commit `6e2ee8a`. Its PostgreSQL database expires on 24 December 2026 at 09:47 IST. The operator can now run [one read-only credential check at a time](SECRETS_CHECKLIST.md). The [migration gates](DATABASE_MIGRATION.md) require a separate authorized hosted backup, Neon rehearsal and rollback evidence.
-
-When the owner explicitly starts Prompt 6, begin with synthetic Gmail job-alert fixtures. Implement a per-user OAuth enrollment/revocation transaction and encrypted offline refresh storage. Prove state, browser, session and tenant binding, replay denial, invalidation after credential replacement and no provider data in logs. Then parse multiple openings per allowed alert into source observations and atomically advance a tenant cursor with deduplicated job creation. Deliver a private no-send shadow run with a bounded opt-in read test. Keep registration closed and keep all external delivery disabled. The earlier Prompt 8 compiler and ATS work remains on the roadmap after intake and evidence gates.
+Prompt 6 is awaiting owner review and explicit authorization for a bounded private Gmail shadow run. Register the [local intake callback](GMAIL_INTEGRATION.md), select the mailbox and exact allowed sender, then follow the [two-run verification](GMAIL_INGESTION.md). Report only counts. Keep hosted deployment and database migration behind a separate approval. Prompt 7 has not started.

@@ -73,3 +73,7 @@ Each row is independently repeatable after loading the file in step 1. Run `pyth
 ## 5. Record the result
 
 For each provider record the date, operator/account, provider name, check performed and outcome. Omit tokens, codes, email addresses and response bodies. A read check can pass while the product adapter remains disabled. For network/TLS failures, confirm DNS, clock, certificates and connectivity. On 429 wait for the provider reset; on 401/403 stop and reauthorize. To disconnect a saved local user credential, choose its provider under Integrations, confirm removal, then revoke it at the provider. Runtime subscriptions, callback tokens and account deletion are separate lifecycle work. [Onboarding and deletion](ONBOARDING.md)
+
+## Prompt 6 Gmail intake
+
+Follow [private per-user enrollment](GMAIL_INTEGRATION.md) for the exact loopback frontend callback. The client ID and secret are reused. Stored Gmail vault text and the operator verifier cannot enroll a mailbox. Optional AI model environment and per-tenant consent are listed in [Gmail ingestion](GMAIL_INGESTION.md).

@@ -8,6 +8,7 @@ import {
   api,
   candidateApi,
   workspaceApi,
+  gmailApi,
   policyApi,
   type Comparison,
 } from "../lib/api";
@@ -259,4 +260,38 @@ export async function editUpload(_: string, form: FormData) {
   return form.get("operation") === "remove"
     ? "Upload removed."
     : "Resume details saved.";
+}
+
+export async function gmailAction(_: string, form: FormData) {
+  const action = form.get("action");
+  let url = "";
+  try {
+    const t = await ownerToken();
+    if (action === "connect") {
+      url = (await gmailApi.connect(t)).url;
+      (await cookies()).set("jody_gmail_return", t, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/gmail/callback",
+        maxAge: 300,
+      });
+    } else if (action === "policy") {
+      await gmailApi.policy(t, {
+        senders: String(form.get("senders")).split(","),
+        label: String(form.get("label") || ""),
+        subject: String(form.get("subject") || ""),
+        days: Number(form.get("days")),
+        limit: Number(form.get("limit")),
+        providers: [],
+      });
+    } else if (action === "sync" || action === "disconnect") {
+      await gmailApi.action(t, action);
+    } else return "Unknown action.";
+  } catch (e) {
+    return message(e);
+  }
+  if (url) redirect(url);
+  revalidatePath("/workspace");
+  return "Gmail settings and status refreshed.";
 }

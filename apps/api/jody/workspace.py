@@ -7,11 +7,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, StringConstraints, ValidationInfo, field_validator
-from sqlalchemy import Connection, Select, Table, delete, func, select, update
+from sqlalchemy import Connection, Select, Table, delete, func, select, true, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .config import private_preview
 from .controls import Key, Result, execute
+from .gmail.service import GmailStatus
+from .gmail.service import status as gmail_status
 from .integration_setup import IntegrationCard, cards
 from .routes import Owner
 from .security import tenant
@@ -23,6 +25,7 @@ from .tables import (
     blocks,
     companies,
     connections,
+    gmail_evidence,
     jobs,
     mail,
     outreach,
@@ -42,6 +45,9 @@ class Entry(BaseModel):
 
 
 class JobView(BaseModel):
+    gmail_platform: str | None
+    employment_type: str | None
+    gmail_review: bool | None
     id: UUID
     description: str
     role: str | None
@@ -55,6 +61,7 @@ class JobView(BaseModel):
 
 
 class Workspace(BaseModel):
+    gmail: GmailStatus
     jobs: list[JobView]
     applications: list[Entry]
     approvals: list[Entry]
@@ -100,11 +107,21 @@ def overview(request: Request, owner: Owner) -> Workspace:
             .limit(1)
             .scalar_subquery()
         )
+        evidence = (
+            select(gmail_evidence)
+            .where(gmail_evidence.c.job_id == jobs.c.id)
+            .order_by(gmail_evidence.c.created_at.desc())
+            .limit(1)
+            .lateral()
+        )
         query = (
             select(
                 jobs.c.id,
                 jobs.c.description,
                 jobs.c.role,
+                evidence.c.platform.label("gmail_platform"),
+                evidence.c.needs_review.label("gmail_review"),
+                evidence.c.facts["employment_type"].astext.label("employment_type"),
                 companies.c.name.label("company"),
                 jobs.c.source_url,
                 jobs.c.location,
@@ -113,7 +130,11 @@ def overview(request: Request, owner: Owner) -> Workspace:
                 score.label("trust_score"),
                 ats.label("ats_score"),
             )
-            .select_from(jobs.outerjoin(companies, jobs.c.company_id == companies.c.id))
+            .select_from(
+                jobs.outerjoin(companies, jobs.c.company_id == companies.c.id).outerjoin(
+                    evidence, true()
+                )
+            )
             .order_by(jobs.c.created_at.desc(), jobs.c.id.desc())
             .limit(100)
         )
@@ -122,6 +143,7 @@ def overview(request: Request, owner: Owner) -> Workspace:
         ).one()
         stored = list(conn.scalars(select(connections.c.provider).order_by(connections.c.provider)))
         return Workspace(
+            gmail=gmail_status(conn),
             jobs=[JobView.model_validate(r) for r in conn.execute(query).mappings()],
             applications=recent(
                 conn,

@@ -43,7 +43,7 @@ async function fetchApi(
       signal: AbortSignal.timeout(
         process.env.VERCEL
           ? 90_000
-          : path.endsWith("/compare")
+          : path.endsWith("/compare") || path.startsWith("/api/v1/gmail/")
             ? 600_000
             : 10_000,
       ),
@@ -257,4 +257,17 @@ export const policyApi = {
     request("/api/v1/workspace/source-policy", "PUT", t, body, k),
   block: (t: string, body: Schema["BlockPolicy"], k: string) =>
     request("/api/v1/workspace/block-policy", "PUT", t, body, k),
+};
+
+export const gmailApi = {
+  status: (t: string) =>
+    request<Schema["GmailStatus"]>("/api/v1/gmail", "GET", t),
+  connect: (t: string) =>
+    request<Schema["Consent"]>("/api/v1/gmail/connect", "POST", t),
+  callback: (t: string, state: string, code: string) =>
+    request("/api/v1/gmail/callback", "POST", t, { state, code }),
+  policy: (t: string, body: Schema["Policy"]) =>
+    request("/api/v1/gmail/policy", "PUT", t, body),
+  action: (t: string, action: "sync" | "disconnect") =>
+    request<Schema["GmailStatus"]>("/api/v1/gmail/" + action, "POST", t),
 };

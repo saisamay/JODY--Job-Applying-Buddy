@@ -152,3 +152,16 @@ These rows capture the owner's phase 1 foundation instructions. The original pro
 | IC10 | 5.5 §5 | P0 | Qualify Neon and manage Render expiry. | Validate direct and pooled access, private hosted export, decryption and rollback in a separate branch before explicitly approved cutover. | Planned |
 | IC11 | 5.5 §6 | P1 | Card-free worker runtime and Ubuntu fallback. | Identify card-free candidate, document limits, validate Ubuntu service/timer definitions and existing durable probe. Require restart/uptime trial before claiming hosted continuity. | Partial |
 | IC12 | 5.5 §§8–9 | P0 | Operator configuration and checkpoint. | Every provider has names, storage location, owner/user boundary, safe check, expected result and failure handling; placeholders only, tested change pushed, existing preview preserved. | Tested |
+
+## Prompt 6 intake
+
+| ID | Priority | Acceptance | Checkpoint |
+|---|---|---|---|
+| GM01 | P0 | Readonly offline consent, PKCE, live-session binding and replay denial | Synthetic API verified |
+| GM02 | P0 | Exact sender filter, bounded window, paginated incremental history and recovery | Synthetic verified |
+| GM03 | P0 | Classify safely and normalize multi-card MIME with absent facts preserved | Synthetic verified; template coverage incomplete |
+| GM04 | P0 | Tenant-scoped evidence, rollback and replay with zero additional jobs | PostgreSQL tests |
+| GM05 | P0 | Pause, manual resume, bounded retries and cancellation | Local manual path tested; continuous worker unprovisioned |
+| GM06 | P1 | Optional consented extractive inference and validated output | Synthetic failure checks; live extraction pending |
+| GM07 | P0 | Status, consent controls, results and discoveries in responsive workspace | Local browser regression |
+| GM08 | P0 | Bounded live read and repeat with owner approval | Awaiting owner |

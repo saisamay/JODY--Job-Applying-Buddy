@@ -391,3 +391,47 @@ career_proposals = entity(
     ref("resume_version_id", "resume_versions"),
     Column("revision", Integer, nullable=False),
 )
+
+# The OAuth grant is separate from manually provisioned integration credentials.
+gmail_accounts = Table(
+    "gmail_accounts",
+    metadata,
+    user_id(primary=True),
+    Column("account", Text),
+    Column("grant", LargeBinary),
+    Column("state", Text, nullable=False, server_default="Disconnected"),
+    Column("history_id", Text),
+    doc("policy"),
+    Column("last_success", DateTime(timezone=True)),
+    Column("state_hash", String(64)),
+    Column("session_hash", String(64)),
+    Column("verifier", LargeBinary),
+    Column("expires", DateTime(timezone=True)),
+)
+gmail_runs = entity(
+    "gmail_runs",
+    Column("status", Text, nullable=False),
+    Column("attempts", Integer, nullable=False, server_default="0"),
+    Column("due", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    doc("progress"),
+    doc("counts"),
+    Column("finished", DateTime(timezone=True)),
+)
+gmail_messages = entity(
+    "gmail_messages",
+    Column("account_key", String(64), nullable=False),
+    Column("message_key", Text, nullable=False),
+    Column("classification", Text, nullable=False),
+    UniqueConstraint("user_id", "account_key", "message_key"),
+)
+gmail_evidence = entity(
+    "gmail_job_evidence",
+    Column("message_id", Uuid, nullable=False),
+    ref("message_id", "gmail_messages"),
+    Column("job_id", Uuid, nullable=False),
+    ref("job_id", "jobs"),
+    Column("platform", Text, nullable=False),
+    Column("needs_review", Boolean, nullable=False),
+    doc("facts"),
+    UniqueConstraint("user_id", "message_id", "job_id"),
+)

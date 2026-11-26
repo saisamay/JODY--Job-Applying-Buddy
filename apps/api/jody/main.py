@@ -21,6 +21,7 @@ from .career.routes import career
 from .config import redis_url
 from .contracts import Error, Live, Ready
 from .controls import controls
+from .gmail.worker import router as gmail
 from .integration_setup import callback_contract
 from .routes import router
 from .security import encryption_key, runtime_engine
@@ -50,6 +51,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="JODY", version="0.1.0", lifespan=lifespan)
 app.include_router(router)
+app.include_router(gmail)
 app.include_router(callback_contract)
 app.include_router(controls)
 app.include_router(candidate)
@@ -116,7 +118,7 @@ def ready(request: Request, response: Response) -> Ready:
                 conn.scalar(
                     text("""
                 SELECT EXISTS (SELECT FROM pg_extension WHERE extname = 'vector')
-                   AND EXISTS (SELECT FROM alembic_version WHERE version_num = '0004_career')
+                   AND EXISTS (SELECT FROM alembic_version WHERE version_num = '0005_gmail')
             """)
                 )
             )

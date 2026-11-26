@@ -1,4 +1,5 @@
 "use client";
+import { Gmail } from "./gmail";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -220,6 +221,13 @@ function Jobs({
                 </span>
                 <span className="tag">{pretty(j.status)}</span>
               </div>
+              {j.gmail_platform && (
+                <p>
+                  Gmail alert · {j.gmail_platform} ·{" "}
+                  {j.employment_type || "Employment type unspecified"} ·{" "}
+                  {j.gmail_review ? "Needs review" : "Extracted from alert"}
+                </p>
+              )}
               {j.location && <p>{j.location}</p>}
               {sourceHost(j.source_url) && (
                 <a
@@ -540,14 +548,17 @@ export function Dashboard({
             />
           )}
           {id === "gmail" && (
-            <Records
-              icon={Mail}
-              title="Email updates"
-              items={data.mail}
-              humanize
-              empty="No classified emails yet. Live Gmail sync is unavailable."
-              sample="Interview invitation · An employer has requested a first conversation."
-            />
+            <>
+              <Gmail data={data.gmail} paused={paused} />
+              <Records
+                icon={Mail}
+                title="Email updates"
+                items={data.mail}
+                humanize
+                empty="No recruitment events recorded. Discovered openings appear in Job discovery."
+                sample="Interview invitation · An employer has requested a first conversation."
+              />
+            </>
           )}
           {id === "resumes" && (
             <Resumes
@@ -608,15 +619,20 @@ export function Dashboard({
             <div className="work-split">
               <section className="surface">
                 <PanelHead icon={Plug} title="Integration status" />
-                {data.integration_cards.map((card) => (
-                  <div className="connection" key={card.provider}>
-                    <div>
-                      <b>{card.label}</b>
-                      <p className="muted">{card.instruction}</p>
+                <Link href="/workspace?view=gmail">
+                  Gmail · {data.gmail.state}
+                </Link>
+                {data.integration_cards
+                  .filter((card) => card.provider !== "gmail")
+                  .map((card) => (
+                    <div className="connection" key={card.provider}>
+                      <div>
+                        <b>{card.label}</b>
+                        <p className="muted">{card.instruction}</p>
+                      </div>
+                      <span className="tag">{card.state}</span>
                     </div>
-                    <span className="tag">{card.state}</span>
-                  </div>
-                ))}
+                  ))}
               </section>
               {locked ? (
                 <p className="surface">
