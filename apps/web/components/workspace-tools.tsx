@@ -280,7 +280,7 @@ export function Credentials({ stored }: { stored: string[] }) {
         <select value={provider} onChange={(e) => setProvider(e.target.value)}>
           {[
             ["github", "GitHub"],
-            ["gmail", "Gmail"],
+            ["gmail", "Gmail (legacy vault entry)"],
             ["gemini", "Gemini"],
             ["groq", "Groq"],
             ["openrouter", "OpenRouter"],

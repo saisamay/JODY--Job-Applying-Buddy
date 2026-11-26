@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     );
     return new Response(null, {
       status: 303,
-      headers: { ...headers, Location: "/workspace?view=gmail" },
+      headers: { ...headers, Location: "/gmail/complete" },
     });
   } catch {
     return new Response(

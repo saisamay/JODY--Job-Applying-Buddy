@@ -163,6 +163,21 @@ def test_pipeline(client, auth, admin_db, monkeypatch):
     )
     assert post("/callback", json=cb).status_code == 200
     assert post("/callback", json=cb).status_code == 409
+    with admin_db.begin() as c:
+        saved = c.scalar(select(gmail_accounts.c.grant))
+        assert b"fixture-refresh" not in saved
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            google, "exchange", lambda **kw: {"access_token": "fixture", "scope": READ_SCOPE}
+        )
+        patch.setattr(Mailbox, "get", lambda self, path: {"emailAddress": "test@fixture.example"})
+        assert post("/callback", json=start()).status_code == 200
+        with admin_db.begin() as c:
+            assert c.scalar(select(gmail_accounts.c.grant)) == saved
+    expired_cb = start()
+    with admin_db.begin() as c:
+        c.execute(update(gmail_accounts).values(expires="2000-01-01"))
+    assert post("/callback", json=expired_cb).status_code == 409
     assert client.put(PATH + "/policy", headers=auth, json={"senders": [SENDER]}).status_code == 200
 
     def run():
