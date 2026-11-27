@@ -182,6 +182,10 @@ def preferences(payload: Preferences, request: Request, owner: Owner, key: Key) 
                 )
             )
         conn.execute(update(settings).where(settings.c.user_id == owner).values(**values))
+        if "min_trust_score_auto_apply" in values:
+            from .job_pipeline import invalidate
+
+            invalidate(conn, owner, request.app.state.secret_key)
         return values
 
     return execute(request, owner, key, "settings.update", values, change)

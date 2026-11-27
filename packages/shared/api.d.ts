@@ -793,6 +793,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/workspace/jobs/{job_id}/trust": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Trust Review */
+    post: operations["trust_review_api_v1_workspace_jobs__job_id__trust_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/health/live": {
     parameters: {
       query?: never;
@@ -855,6 +872,45 @@ export interface components {
       facet: string;
       /** Evidence Id */
       evidence_id: string | null;
+    };
+    /** Assessment */
+    Assessment: {
+      /**
+       * State
+       * @enum {string}
+       */
+      state:
+        | "trusted"
+        | "needs_review"
+        | "high_risk"
+        | "confirmed_scam"
+        | "insufficient"
+        | "not_assessed";
+      /** Score */
+      score: number;
+      /** Threshold */
+      threshold: number;
+      /** Coverage */
+      coverage: number;
+      /**
+       * Confidence
+       * @enum {string}
+       */
+      confidence: "low" | "medium" | "high";
+      /** Signals */
+      signals: components["schemas"]["Signal"][];
+      /**
+       * Version
+       * @default trust-1
+       */
+      version: string;
+      /**
+       * Assessed At
+       * Format: date-time
+       */
+      assessed_at: string;
+      /** Review */
+      review?: string | null;
     };
     /** BlockPolicy */
     BlockPolicy: {
@@ -1265,6 +1321,14 @@ export interface components {
       location: string | null;
       /** Status */
       status: string;
+      /**
+       * Trust Stale
+       * @default false
+       */
+      trust_stale: boolean;
+      trust_report: components["schemas"]["Assessment"] | null;
+      /** Trust Id */
+      trust_id: string | null;
       /** Trust Score */
       trust_score: number | null;
       /** Ats Score */
@@ -1591,6 +1655,31 @@ export interface components {
       /** Max Age */
       max_age: number;
     };
+    /** Signal */
+    Signal: {
+      /** Code */
+      code: string;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: "verified" | "claim" | "risk" | "unknown";
+      /**
+       * Severity
+       * @default info
+       * @enum {string}
+       */
+      severity: "info" | "context" | "high" | "critical";
+      /**
+       * Points
+       * @default 0
+       */
+      points: number;
+      /** Explanation */
+      explanation: string;
+      /** Reference */
+      reference: string;
+    };
     /** Source */
     Source: {
       /**
@@ -1682,6 +1771,27 @@ export interface components {
        * @enum {string}
        */
       origin: "user_provided" | "inferred";
+    };
+    /** TrustCommand */
+    TrustCommand: {
+      /**
+       * Action
+       * @enum {string}
+       */
+      action:
+        "reassess" | "verify" | "approve" | "skip" | "block" | "confirmed_scam";
+      /** Assessment Id */
+      assessment_id?: string | null;
+      /**
+       * Reference
+       * @default
+       */
+      reference: string;
+      /**
+       * Note
+       * @default
+       */
+      note: string;
     };
     /** Uploaded */
     Uploaded: {
@@ -3486,6 +3596,45 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Screening"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  trust_review_api_v1_workspace_jobs__job_id__trust_post: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TrustCommand"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Validation Error */

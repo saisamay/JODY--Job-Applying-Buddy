@@ -98,6 +98,46 @@ def job(client, h, description):
     ]
 
 
+@pytest.fixture
+def supported_employer(admin_db, monkeypatch):
+    from jody.tables import control
+
+    monkeypatch.setenv("JODY_TRUST_EMPLOYERS", '{"fixture employer":"fixture.example"}')
+    with admin_db.begin() as c:
+        prior = c.scalar(select(control.c.is_system_paused))
+        c.execute(update(control).values(is_system_paused=False))
+    try:
+        yield
+    finally:
+        with admin_db.begin() as c:
+            c.execute(update(control).values(is_system_paused=prior))
+
+
+def supported_job(client, h, description):
+    link = "https://fixture.example/jobs/1234"
+    jid = ok(
+        client.post(
+            "/api/v1/jobs/manual",
+            headers=h,
+            json={"description": description + "\nCompany: Fixture Employer", "source_url": link},
+        )
+    )["id"]
+    row = next(r for r in ok(client.get("/api/v1/workspace", headers=h))["jobs"] if r["id"] == jid)
+    ok(
+        client.post(
+            f"/api/v1/workspace/jobs/{jid}/trust",
+            headers=command(h),
+            json={
+                "action": "approve",
+                "assessment_id": row["trust_id"],
+                "reference": link,
+                "note": "Fixture independently confirms this exact official role.",
+            },
+        )
+    )
+    return jid
+
+
 class Offline:
     def __init__(self, provider=None):
         self.provider = provider or Mock()
@@ -167,14 +207,14 @@ def test_conflicts_and_immutable_history(client, identity, auth):
         c.execute(update(career_sources).values(kind="rewritten"))
 
 
-def test_match_cache_and_proposal(client, identity, auth):
+def test_match_cache_and_proposal(client, identity, auth, supported_employer):
     owner, h = identity
     source(client, h, "Mobile", "Projects\nBuilt mobile layouts with Flutter.")
     baseline = "Education\nBSc in Computer Science, 2024\nEmployment\nNorth Lab internship, 2022–2023\nProjects\nBuilt REST APIs in Python."
     bid = source(client, h, "Services", baseline)
     ref = "https://github.com/example/fixture/blob/" + ("c" * 40) + "/README.md"
     gid = source(client, h, "Storage", "Designed relational databases.", "github", ref)
-    qualified = job(
+    qualified = supported_job(
         client,
         h,
         "Title: Systems Developer\nRequired: Build HTTP endpoints with Python\nRequired: Design relational storage\nPreferred: Rust",
@@ -349,7 +389,7 @@ def test_metered_retries_and_daily_limit(client, identity, monkeypatch):
         assert sorted(r[0] for r in rows) == [0, 0] and sum(r[1] is None for r in rows) == 1
 
 
-def test_mcp_protocol_and_permissions(client, identity, auth):
+def test_mcp_protocol_and_permissions(client, identity, auth, supported_employer):
     owner, h = identity
 
     def grant(scope):
@@ -359,7 +399,7 @@ def test_mcp_protocol_and_permissions(client, identity, auth):
     read, write = grant("read"), grant("proposal")
     sid = source(client, h, "Master", "Projects\nBuilt REST APIs with Python.")
     verify_all(client, h)
-    jid = job(client, h, "Title: Platform Developer\nRequired: Python")
+    jid = supported_job(client, h, "Title: Platform Developer\nRequired: Python")
     assert (
         ok(client.get(f"{API}/mcp/read/job?record_id={jid}", headers=read))["canonical"]["title"]
         == "Platform Developer"
@@ -517,12 +557,12 @@ def test_transferable_match_keeps_missing_questions(client, identity):
     report = ok(client.post(path + "/compare", headers=h))
     assert report["recommendation"] == "Potential Match" and report["transferable"]
     assert {r["text"] for r in report["missing_required"]} == {"Python GraphQL APIs", "Redis"}
-    receipt = ok(
-        client.post(path + "/proposal", headers=command(h), json={"method": "custom_portal"})
+    assert (
+        client.post(
+            path + "/proposal", headers=command(h), json={"method": "custom_portal"}
+        ).status_code
+        == 409
     )
-    version = ok(client.get(API + "/versions/" + receipt["resume_version_id"], headers=h))
-    assert set(version["claim_manifest"]["missing_information"]) == {"Python GraphQL APIs", "Redis"}
-    assert "Redis" not in version["latex_source"] and "GraphQL" not in version["latex_source"]
 
 
 def test_profile_import_reads_reviewed_qualifications_only(client, identity):

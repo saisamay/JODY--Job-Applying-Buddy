@@ -47,7 +47,12 @@ def job_clauses(description: str, role: str | None) -> tuple[str | None, list[Js
     section = "responsibility"
     for line in description.splitlines():
         line = line.strip(" \t-*•")
-        if not line:
+        if (
+            not line
+            or line.partition(":")[0].casefold()
+            in {"company", "company domain", "recruiter email", "posting url"}
+            and ":" in line
+        ):
             continue
         if line.lower().startswith(("title:", "job title:", "role:")):
             role = line.split(":", 1)[1].strip()

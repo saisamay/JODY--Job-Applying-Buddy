@@ -322,3 +322,30 @@ export async function readJobSources(id: string) {
     return { message: message(e) };
   }
 }
+
+export async function reviewTrust(
+  id: string,
+  assessmentId: string | null,
+  _previous: string,
+  form: FormData,
+) {
+  try {
+    const token = await ownerToken();
+    await workspaceApi.trust(
+      token,
+      id,
+      {
+        action: String(form.get("action")) as
+          "reassess" | "approve" | "skip" | "block" | "confirmed_scam",
+        assessment_id: assessmentId,
+        reference: String(form.get("reference") || ""),
+        note: String(form.get("note") || ""),
+      },
+      randomUUID(),
+    );
+    revalidatePath("/workspace");
+    return "Trust assessment updated.";
+  } catch (e) {
+    return message(e);
+  }
+}

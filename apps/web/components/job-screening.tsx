@@ -1,6 +1,6 @@
 "use client";
 import { useActionState } from "react";
-import { readJobSources, screenJobs } from "../app/actions";
+import { readJobSources, screenJobs, reviewTrust } from "../app/actions";
 import type { WorkspaceJob } from "../lib/api";
 export const screenLabels: Record<string, string> = {
   eligible: "Eligible for further evaluation",
@@ -30,6 +30,88 @@ export function BatchEvaluation() {
     </form>
   );
 }
+function TrustReview({ job }: { job: WorkspaceJob }) {
+  const [result, action, pending] = useActionState(
+    reviewTrust.bind(null, job.id, job.trust_id),
+    "",
+  );
+  const report = job.trust_report;
+  const stale = report && job.trust_stale;
+  return (
+    <section>
+      <h4>Employer legitimacy</h4>
+      {!report && (
+        <p>
+          {job.trust_score !== null
+            ? "Historical score · current rubric pending"
+            : "Current assessment pending"}
+        </p>
+      )}
+      {report && (
+        <>
+          <p>
+            {stale ? "Reassessment due" : report.state.replaceAll("_", " ")} ·{" "}
+            {report.score}/100 · threshold {report.threshold}
+          </p>
+          <p>
+            Evidence coverage {report.coverage}% · {report.confidence}{" "}
+            confidence · {new Date(report.assessed_at).toLocaleDateString()} ·{" "}
+            {report.version}
+          </p>
+          {report.review && <p>Owner decision · {report.review}</p>}
+          <ul>
+            {report.signals.map((s) => (
+              <li key={s.code}>
+                {s.kind} · {s.severity} · {s.explanation}{" "}
+                <small>{s.reference}</small>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <form className="vertical" action={action}>
+        <button name="action" value="reassess" disabled={pending}>
+          Reassess trust
+        </button>
+        {report && (
+          <>
+            <label>
+              Independent official vacancy URL for approval
+              <input type="url" name="reference" />
+            </label>
+            <label>
+              Review evidence or reason
+              <input name="note" maxLength={500} />
+            </label>
+            <div>
+              <button
+                name="action"
+                value="approve"
+                disabled={
+                  pending ||
+                  !!stale ||
+                  ["high_risk", "confirmed_scam"].includes(report.state)
+                }
+              >
+                Approve verified vacancy
+              </button>{" "}
+              <button name="action" value="skip" disabled={pending}>
+                Skip opportunity
+              </button>{" "}
+              <button name="action" value="block" disabled={pending}>
+                Block opportunity
+              </button>{" "}
+              <button name="action" value="confirmed_scam" disabled={pending}>
+                Record confirmed scam
+              </button>
+            </div>
+          </>
+        )}
+        <span role="status">{result}</span>
+      </form>
+    </section>
+  );
+}
 export function JobScreening({ job }: { job: WorkspaceJob }) {
   const [result, action, busy] = useActionState(
     async () => screenJobs(job.id, !job.canonical),
@@ -42,6 +124,7 @@ export function JobScreening({ job }: { job: WorkspaceJob }) {
   const screen = ("screen" in result && result.screen) || job.screening;
   return (
     <section className="job-screening">
+      <TrustReview job={job} />
       <h3>{screenLabels[screen?.decision ?? screenKey(job)]}</h3>
       {screen && (
         <>

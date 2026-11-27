@@ -200,6 +200,19 @@ export type ProjectSource = Pick<
 >;
 export type JobScreen = Schema["Screening"];
 export const workspaceApi = {
+  trust: (
+    token: string,
+    id: string,
+    body: Schema["TrustCommand"],
+    key: string,
+  ) =>
+    request(
+      "/api/v1/workspace/jobs/" + encodeURIComponent(id) + "/trust",
+      "POST",
+      token,
+      body,
+      key,
+    ),
   evaluate: (token: string, id?: string) =>
     request<{ evaluated: number }>(
       "/api/v1/workspace/evaluate" +

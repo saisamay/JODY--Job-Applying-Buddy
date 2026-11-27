@@ -1,6 +1,6 @@
 # Next authorized step
 
-Prompt 7 local intake and screening have passed regression. Await the owner’s Prompt 8 scope. Job Discovery can evaluate up to 25 due records per invocation. With the local runtime environment loaded, the equivalent worker command is `PYTHONPATH=apps/api .venv/bin/python apps/worker/evaluate_jobs.py`. Historical review reads retained facts without writing a repair. Historical cleanup is optional. Before changing any of the 46 jobs, obtain specific mapping approval and verify an encrypted backup by restoring it in isolation. Preserve every receipt and evidence link. Distinct platform IDs may still describe the same employer requisition.
+Prompt 8 adds offline legitimacy assessment and audited owner review. Await the owner’s next numbered instruction. Keep optional public checks off unless separately configured and authorized. See [job trust operations](JOB_TRUST.md). Historical cleanup still requires a verified backup and owner-approved mapping.
 
 ## Shortest path to hosted beta and public release
 

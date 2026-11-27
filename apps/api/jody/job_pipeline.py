@@ -10,7 +10,9 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from .config import private_preview
 from .eligibility import Facts, Screening, assess, normalize, strong_keys
 from .security import audit, digest, unseal
-from .tables import blocks, companies, events, jobs, observations, profiles, sources
+from .tables import blocks, companies, events, jobs, observations, profiles, sources, trust
+from .trust_rules import VERSION
+from .trust_service import assessment
 
 
 def lock(c: Connection, owner: UUID) -> None:
@@ -165,6 +167,8 @@ def ingest(
     if new or matches[0].canonical:
         screen = evaluate(c, owner, key, f).model_dump(mode="json") if dispatch(c) else None
         c.execute(update(jobs).where(jobs.c.id == jid).values(screening=screen))
+        if screen is not None:
+            assessment(c, owner, jid)
     return jid, new
 
 
@@ -179,7 +183,14 @@ def batch(
         q = q.where(jobs.c.id == job_id)
     else:
         q = q.where(
-            jobs.c.screening.is_(None)
+            ~select(trust.c.id)
+            .where(
+                trust.c.job_id == jobs.c.id,
+                trust.c.rules_version == VERSION,
+                trust.c.created_at >= func.now() - text("interval '24 hours'"),
+            )
+            .exists()
+            | jobs.c.screening.is_(None)
             | (jobs.c.screening["assessed_on"].astext < func.to_char(func.now(), "YYYY-MM-DD"))
         )
     rows = c.execute(q.order_by(jobs.c.id).limit(limit)).all()
@@ -191,6 +202,7 @@ def batch(
             .where(jobs.c.id == jid)
             .values(screening=evaluate(c, owner, key, f).model_dump(mode="json"))
         )
+        assessment(c, owner, jid)
     return len(rows)
 
 

@@ -117,6 +117,8 @@ def propose(request: Request, conn: Connection, owner: UUID, job_id: UUID, metho
     )
     if vacancy is None:
         raise HTTPException(404, "Job not found.")
+    if not vacancy["canonical"]:
+        raise HTTPException(409, "Canonical eligibility and trust review required.")
     if vacancy["canonical"]:
         from ..job_pipeline import evaluate
 
@@ -142,7 +144,23 @@ def propose(request: Request, conn: Connection, owner: UUID, job_id: UUID, metho
     )
     if vacancy["status"] in {"scam_blocked", "skipped"} or denied:
         raise HTTPException(409, "This job is excluded from preparation.")
+    from ..trust_service import assessment
+
+    if assessment(conn, owner, job_id).state != "trusted":
+        raise HTTPException(
+            409, "Independent trust evidence and review are required before preparation."
+        )
     match = comparison(request, conn, owner, job_id, cached_only=True)
+    # The existing qualification comparison can resolve a skills-only review with verified matches.
+    if screening.decision != "eligible" and not (
+        screening.decision == "needs_review"
+        and screening.reasons
+        and all(r.code == "skills" for r in screening.reasons)
+        and match["matched"]
+        and not match["missing_required"]
+        and not match["transferable"]
+    ):
+        raise HTTPException(409, "Resolve mandatory eligibility before preparing this opportunity.")
     if match["recommendation"] not in {"Strong Match", "Potential Match"}:
         raise HTTPException(409, "Job needs qualification review before preparing a proposal.")
     state = knowledge(conn, owner, request.app.state.secret_key)

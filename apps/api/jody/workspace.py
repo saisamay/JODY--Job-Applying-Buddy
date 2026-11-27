@@ -1,7 +1,7 @@
 """Owner-scoped read model for the dashboard. Lists show the latest 100 records."""
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
@@ -38,6 +38,8 @@ from .tables import (
     sources,
     trust,
 )
+from .trust_rules import VERSION, Assessment
+from .trust_service import Action, assessment
 
 
 class Entry(BaseModel):
@@ -67,6 +69,9 @@ class JobView(BaseModel):
     source_url: str | None
     location: str | None
     status: str
+    trust_stale: bool = False
+    trust_report: Assessment | None
+    trust_id: UUID | None
     trust_score: int | None
     ats_score: int | None
     created_at: datetime
@@ -105,12 +110,12 @@ def recent(conn: Connection, query: Select[Any], table: Table) -> list[Entry]:
 @workspace.get("/workspace")
 def overview(request: Request, owner: Owner) -> Workspace:
     with tenant(request.app.state.db, owner) as conn:
-        score = (
-            select(trust.c.score)
-            .where(trust.c.job_id == jobs.c.id)
+        latest = (
+            select(trust.c.score, trust.c.id, trust.c.evidence)
+            .where(trust.c.job_id == jobs.c.id, trust.c.rules_version == VERSION)
             .order_by(trust.c.created_at.desc(), trust.c.id.desc())
             .limit(1)
-            .scalar_subquery()
+            .lateral()
         )
         ats = (
             select(artifacts.c.ats_score)
@@ -156,13 +161,22 @@ def overview(request: Request, owner: Owner) -> Workspace:
                 jobs.c.location,
                 jobs.c.status,
                 jobs.c.created_at,
-                score.label("trust_score"),
+                func.coalesce(
+                    latest.c.score,
+                    select(trust.c.score)
+                    .where(trust.c.job_id == jobs.c.id)
+                    .order_by(trust.c.created_at.desc(), trust.c.id.desc())
+                    .limit(1)
+                    .scalar_subquery(),
+                ).label("trust_score"),
+                latest.c.id.label("trust_id"),
+                latest.c.evidence["report"].label("trust_report"),
                 ats.label("ats_score"),
             )
             .select_from(
-                jobs.outerjoin(companies, jobs.c.company_id == companies.c.id).outerjoin(
-                    evidence, true()
-                )
+                jobs.outerjoin(companies, jobs.c.company_id == companies.c.id)
+                .outerjoin(evidence, true())
+                .outerjoin(latest, true())
             )
             .order_by(jobs.c.created_at.desc(), jobs.c.id.desc())
             .limit(100)
@@ -173,6 +187,16 @@ def overview(request: Request, owner: Owner) -> Workspace:
         stored = list(conn.scalars(select(connections.c.provider).order_by(connections.c.provider)))
         job_views = [JobView.model_validate(r) for r in conn.execute(query).mappings()]
         for job in job_views:
+            report = job.trust_report
+            job.trust_stale = bool(
+                report
+                and (
+                    report.threshold != thresholds[0]
+                    or report.assessed_at < datetime.now(UTC) - timedelta(hours=24)
+                    or job.canonical is not None
+                    and job.screening is None
+                )
+            )
             if job.gmail_platform and job.role and not job.platform_job_id and not job.source_url:
                 inferred = [
                     other.id
@@ -474,3 +498,39 @@ def legacy_review(request: Request, owner: Owner, job_id: UUID) -> Screening:
             {"title": row["role"], "location": row["location"], "company": row["company"], **facts},
         )
         return evaluate(c, owner, request.app.state.secret_key, f)
+
+
+class TrustCommand(BaseModel):
+    action: Action
+    assessment_id: UUID | None = None
+    reference: Annotated[str, StringConstraints(max_length=2000)] = ""
+    note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] = ""
+
+
+@workspace.post("/workspace/jobs/{job_id}/trust")
+def trust_review(
+    job_id: UUID, body: TrustCommand, owner: Owner, request: Request, key: Key
+) -> Result:
+    if body.action not in ("reassess", "verify") and not body.assessment_id:
+        raise HTTPException(422, "Review the current assessment first.")
+
+    def change(c: Connection) -> Result:
+        report = assessment(
+            c,
+            owner,
+            job_id,
+            body.action,
+            body.reference,
+            body.note,
+            str(body.assessment_id) if body.assessment_id else None,
+        )
+        return {"job_id": str(job_id), "state": report.state, "action": body.action}
+
+    return execute(
+        request,
+        owner,
+        key,
+        "trust.review",
+        {"job_id": str(job_id), **body.model_dump(mode="json")},
+        change,
+    )

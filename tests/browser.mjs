@@ -254,6 +254,16 @@ test(
       await expect(
         page.locator("summary").filter({ hasText: fixture }),
       ).toHaveCount(1);
+      await page.locator("summary").filter({ hasText: fixture }).click();
+      const review = page.locator(".job-screening").filter({
+        has: page.getByRole("heading", { name: "Employer legitimacy" }),
+      });
+      await expect(review).toContainText("insufficient");
+      await review
+        .getByLabel("Review evidence or reason")
+        .fill("Synthetic owner review");
+      await review.getByRole("button", { name: "Skip opportunity" }).click();
+      await expect(review).toContainText("Owner decision · skip");
       await selectView(page, "Overview");
       await page.getByRole("button", { name: "Pause all tasks" }).click();
       await expect(page.getByText("Background tasks paused")).toBeVisible();

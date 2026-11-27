@@ -2,8 +2,10 @@
 
 import http.client
 import ipaddress
+import queue
 import socket
 import ssl
+import threading
 import time
 from urllib.parse import urljoin, urlsplit
 
@@ -11,8 +13,38 @@ from fastapi import HTTPException
 
 from ..config import private_preview
 
+_dns_slots = threading.BoundedSemaphore(4)
 
-def fetch(url: str, *, html: bool, redirects: int = 2) -> bytes:
+
+def public_addresses(host: str) -> list[ipaddress.IPv4Address | ipaddress.IPv6Address]:
+    # Bound slow OS resolver calls as well as the number left running after timeout.
+    result: queue.Queue[list[ipaddress.IPv4Address | ipaddress.IPv6Address]] = queue.Queue(
+        maxsize=1
+    )
+    if not _dns_slots.acquire(blocking=False):
+        raise HTTPException(503, "Resolver busy.")
+
+    def resolve() -> None:
+        try:
+            result.put(
+                [
+                    ipaddress.ip_address(record[4][0])
+                    for record in socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+                ]
+            )
+        except (OSError, ValueError):
+            result.put([])
+        finally:
+            _dns_slots.release()
+
+    threading.Thread(target=resolve, daemon=True).start()
+    try:
+        return result.get(timeout=3)
+    except queue.Empty:
+        raise HTTPException(503, "Domain lookup timed out.") from None
+
+
+def fetch(url: str, *, html: bool, redirects: int = 2, registry: bool = False) -> bytes:
     if private_preview():
         raise HTTPException(403, "External imports are disabled for this preview.")
     parts = urlsplit(url)
@@ -29,8 +61,7 @@ def fetch(url: str, *, html: bool, redirects: int = 2) -> bytes:
         raise HTTPException(422, "A public HTTPS document on port 443 is required.")
     connection = http.client.HTTPSConnection(host, timeout=5)
     try:
-        addresses = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
-        ips = [ipaddress.ip_address(record[4][0]) for record in addresses]
+        ips = public_addresses(host)
         if not ips or any(
             not ip.is_global or ip.is_multicast or (ip.version == 6 and ip.is_site_local)
             for ip in ips
@@ -58,6 +89,8 @@ def fetch(url: str, *, html: bool, redirects: int = 2) -> bytes:
             allowed = (
                 {"text/html", "application/xhtml+xml"}
                 if html
+                else {"application/rdap+json", "application/json"}
+                if registry
                 else {"text/plain", "application/octet-stream"}
             )
             if response.status != 200 or response.headers.get_content_type() not in allowed:
