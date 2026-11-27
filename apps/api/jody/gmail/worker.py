@@ -165,12 +165,17 @@ def process(
         category = answer.classification
         rows = [(v, True) for v in answer.vacancies] if category in RELEVANT else []
     elif (
-        len(rows) == 1 and policy.providers and (not rows[0][0].company or not rows[0][0].location)
+        len(rows) == 1
+        and rows[0][0]._card_excerpt
+        and policy.providers
+        and (not rows[0][0].company or not rows[0][0].location)
     ):
         original, unsafe = rows[0]
         # A single candidate has no competing card for a model to splice fields from.
         try:
-            proposal = assisted(db, c, owner, key, list(policy.providers), content, n)
+            proposal = assisted(
+                db, c, owner, key, list(policy.providers), original._card_excerpt, n
+            )
         except google.Problem:
             rows = [(original, True)]
         else:

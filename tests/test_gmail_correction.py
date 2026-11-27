@@ -196,7 +196,9 @@ def test_five_message_boundary_and_platform_identity(client, admin_db, monkeypat
         monkeypatch.setattr(repair_preview, "Mailbox", ReceiptMailbox)
         monkeypatch.setattr(repair_preview, "PRIVATE_OWNER", owner)
         monkeypatch.setattr(repair_preview, "operator_session", nullcontext)
-        repair_preview.preview(receipt)
+        proposals = repair_preview.preview(receipt)
+        assert proposals[0]["proposed_job_fields"]["company"] == "Example"
+        assert len(proposals[0]["same_title_existing_jobs"]) == 2
         assert calls == ["metadata", "full"]
         with tenant(app.state.db, owner) as c:
             assert c.scalar(select(func.count()).select_from(jobs)) == 2

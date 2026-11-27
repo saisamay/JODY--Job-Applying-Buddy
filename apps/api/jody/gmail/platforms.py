@@ -137,8 +137,11 @@ def linkedin(html: str) -> list[tuple[Vacancy, bool]]:
             continue
         node = a
         company = location = mode = employment = None
+        excerpt = ""
         while grouped.get(node) == {jid}:
             lines = node.lines()
+            if node.tag in {"tr", "li", "article"} and not excerpt:
+                excerpt = "\n".join(lines)[:3500]
             for line in lines:
                 parts = re.split(r"\s+[·•]\s+", line)
                 if len(parts) == 2 and title not in line and len(line) < 240:
@@ -175,6 +178,7 @@ def linkedin(html: str) -> list[tuple[Vacancy, bool]]:
                 False,
             )
         )
+        rows[-1][0]._card_excerpt = excerpt
     return rows
 
 

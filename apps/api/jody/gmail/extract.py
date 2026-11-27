@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 from typing import Annotated, Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 Json = dict[str, Any]
 Short = Annotated[str, Field(min_length=1, max_length=240)]
@@ -24,6 +24,7 @@ RELEVANT = {"Job alert", "Direct job opportunity", "Campus placement opportunity
 
 
 class Vacancy(BaseModel):
+    _card_excerpt: str = PrivateAttr(default="")
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     title: Short
     company: Short | None = None
