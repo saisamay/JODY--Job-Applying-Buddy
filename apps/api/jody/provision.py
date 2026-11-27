@@ -33,6 +33,7 @@ def provision() -> None:
             "SELECT, INSERT, UPDATE ON gmail_accounts, gmail_runs",
             "SELECT, INSERT ON gmail_messages, gmail_job_evidence",
             "INSERT ON companies",
+            "UPDATE (canonical,screening) ON jobs",
             "SELECT, INSERT ON career_sources, career_versions, career_cache, career_usage, career_proposals, resume_versions, applications",
             "SELECT ON github_projects, approval_requests, companies, blocked_entities",
             "SELECT ON trust_evaluations, generated_artifacts, email_events, recruiter_outreach",

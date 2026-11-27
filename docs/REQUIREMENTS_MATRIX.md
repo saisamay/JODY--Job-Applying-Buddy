@@ -9,8 +9,8 @@ Each row has a permanent ID. Source references use the printed PDF page and sect
 | ID | Source | Priority | Requirement and disposition | Acceptance criterion | Status |
 |---|---|---|---|---|---|
 | F01 | pp1–3 §§1–4.1 | P0 | Discover jobs from multiple channels and manual links or text. | Manual text and URL create owner-scoped opportunities. A supplied WhatsApp or LinkedIn item retains its group, feed or post source type and permission basis. | Partial |
-| F02 | p3 §4.1 | P0 | Extract role, employer, location, remote flag, application URL and HR/recruiter email. | Fixture yields all present fields with provenance and unknowns for missing fields. | Planned |
-| F03 | p3 §4.1 | P0 | Normalize and deduplicate across sources. | Concurrent imports of one requisition yield one job, two sightings and one application intent. Similar roles with distinct requisitions remain separate. | Partial |
+| F02 | p3 §4.1 | P0 | Extract role, employer, location, remote flag, application URL and HR/recruiter email. | Fixture yields all present fields with provenance and unknowns for missing fields. | Partial · sourced manual and Gmail fields tested; template coverage varies |
+| F03 | p3 §4.1 | P0 | Normalize and deduplicate across sources. | Concurrent imports of one requisition yield one job, two sightings and one application intent. Similar roles with distinct requisitions remain separate. | Tested · concurrent Gmail/manual identity, distinct postings and replay-safe preparation |
 | F04 | p3 §4.2 | P0 | Assess legitimacy before tailoring or sharing details. | Record 0–100, flags, evidence and check time for domain age, recruiter/site domain alignment including free webmail, authorized LinkedIn company/recruiter evidence, fee/deposit/security-payment language and off-platform demands. Unavailable signals remain unknown. | Planned |
 | F05 | pp1–3 §§1,4.2 | P0 | Route trusted, doubtful and scam jobs. | At default 80, high trust may start preparation. Borderline or insufficient evidence shows score and flags for approve/skip/block. Confirmed scam blocks dispatch, updates blocklist and proposes matching inbox cleanup. | Adapted |
 | F06 | p3 §4.3 | P0 | Select real projects relevant to the job description. | Ranked results show supporting passages, source revision and unmet requirements. Cross-owner and unverified claims are excluded. | Tested |
@@ -140,7 +140,7 @@ These rows capture the owner's phase 1 foundation instructions. The original pro
 
 | ID | Source | Priority | Requirement | Acceptance criteria | Status |
 |---|---|---|---|---|---|
-| IC01 | Autonomous spec §§1–4, 18; 5.5 §1 | P0 | Automatic discovery through permitted sources alongside supplementary manual intake. | All sources enter the same attributable, deduplicated pipeline; no action can bypass trust, evidence, pause or approval. Read-only pilot and subsequent dispatch remain staged. | Planned |
+| IC01 | Autonomous spec §§1–4, 18; 5.5 §1 | P0 | Automatic discovery through permitted sources alongside supplementary manual intake. | All sources enter the same attributable, deduplicated pipeline; no action can bypass trust, evidence, pause or approval. Read-only pilot and subsequent dispatch remain staged. | Partial · Gmail and manual share transactional intake and screening; future permitted adapters pending |
 | IC02 | 5.5 §2 | P0 | Multi-user identity and onboarding. | Verified/recovered identity maps to a unique user, blank defaults, isolated resumable settings and verified disconnect/deletion. No public registration before two-tenant release gates. | Partial |
 | IC03 | 5.5 §3 | P0 | Evidence-based integration state contract. | Seven typed states. Private UI distinguishes stored credentials and disabled adapters; tenant authorization and removal tested. Durable verification receipts required for persistent verified badges. | Partial |
 | IC04 | 5.5 §3; owner setup | P0 | Official read-only Gmail setup and refresh. | Exact callback, one-use state, browser binding, PKCE, scope validation, refresh and metadata probe verified with fixtures. Hosted tenant grant lifecycle and real owner verification outstanding. | Partial |
@@ -159,7 +159,7 @@ These rows capture the owner's phase 1 foundation instructions. The original pro
 |---|---|---|---|
 | GM01 | P0 | Readonly offline consent, PKCE, live-session binding and replay denial | Synthetic API verified |
 | GM02 | P0 | Exact sender filter, bounded window, paginated incremental history and recovery | Synthetic verified |
-| GM03 | P0 | Classify safely and normalize multi-card MIME with absent facts preserved | Synthetic verified; template coverage incomplete |
+| GM03 | P0 | Classify safely and normalize multi-card MIME with absent facts preserved | Tested on synthetic fixtures and two authorized LinkedIn receipts; other templates may require review |
 | GM04 | P0 | Tenant-scoped evidence, rollback and replay with zero additional jobs | PostgreSQL tests |
 | GM05 | P0 | Pause, manual resume, bounded retries and cancellation | Local manual path tested; continuous worker unprovisioned |
 | GM06 | P1 | Optional consented extractive inference and validated output | Synthetic failure checks; live extraction pending |

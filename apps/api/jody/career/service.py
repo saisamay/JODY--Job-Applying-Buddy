@@ -36,12 +36,17 @@ def comparison(
     normalized_only: bool = False,
 ) -> Json:
     def inputs(c: Connection) -> tuple[Json, list[Json], int]:
-        row = c.execute(select(jobs.c.description, jobs.c.role).where(jobs.c.id == job_id)).first()
+        row = c.execute(
+            select(jobs.c.description, jobs.c.role, jobs.c.canonical).where(jobs.c.id == job_id)
+        ).first()
         if row is None:
             raise HTTPException(404, "Job not found.")
         state = knowledge(c, owner, request.app.state.secret_key)
         return (
-            {"description": row.description, "role": row.role},
+            {
+                "description": (row.canonical or {}).get("description") or row.description,
+                "role": (row.canonical or {}).get("title") or row.role,
+            },
             [f for f in verified(state) if not INSTRUCTION.search(f["quote"])],
             state["revision"],
         )
@@ -97,6 +102,7 @@ def propose(request: Request, conn: Connection, owner: UUID, job_id: UUID, metho
         conn.execute(
             select(
                 jobs.c.status,
+                jobs.c.canonical,
                 jobs.c.application_url,
                 jobs.c.source_url,
                 jobs.c.recruiter_email,
@@ -111,6 +117,12 @@ def propose(request: Request, conn: Connection, owner: UUID, job_id: UUID, metho
     )
     if vacancy is None:
         raise HTTPException(404, "Job not found.")
+    if vacancy["canonical"]:
+        from ..job_pipeline import evaluate
+
+        screening = evaluate(conn, owner, request.app.state.secret_key, vacancy["canonical"])
+        if screening.decision in {"ineligible", "blocklisted", "expired_or_closed"}:
+            raise HTTPException(409, "This job is excluded from preparation.")
     domains = {str(vacancy["domain"] or "").casefold()}
     for url in [vacancy["application_url"], vacancy["source_url"]]:
         if url:
@@ -221,6 +233,29 @@ def propose(request: Request, conn: Connection, owner: UUID, job_id: UUID, metho
         + "\n\n".join(latex_text(f["quote"]) for f in after if f["category"] == group)
         for group in categories
     )
+    existing = conn.execute(
+        select(
+            career_proposals.c.id,
+            career_proposals.c.application_id,
+            career_proposals.c.resume_version_id,
+        )
+        .join(applications, applications.c.id == career_proposals.c.application_id)
+        .join(resumes, resumes.c.id == career_proposals.c.resume_version_id)
+        .where(
+            applications.c.job_id == job_id,
+            applications.c.method == method,
+            career_proposals.c.revision == state["revision"],
+            resumes.c.claim_manifest == manifest,
+            resumes.c.latex_source == latex,
+        )
+        .limit(1)
+    ).first()
+    if existing:
+        return {
+            "proposal_id": str(existing.id),
+            "application_id": str(existing.application_id),
+            "resume_version_id": str(existing.resume_version_id),
+        }
     rid = conn.scalar(
         insert(resumes)
         .values(

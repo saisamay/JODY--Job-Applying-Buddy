@@ -295,3 +295,30 @@ export async function gmailAction(_: string, form: FormData) {
   revalidatePath("/workspace");
   return "Gmail settings and status refreshed.";
 }
+
+export async function screenJobs(id?: string, legacy = false) {
+  try {
+    const token = await ownerToken();
+    if (id && legacy)
+      return {
+        screen: await workspaceApi.legacyReview(token, id),
+        message: "Historical source reviewed.",
+      };
+    const result = await workspaceApi.evaluate(token, id);
+    revalidatePath("/workspace");
+    return {
+      message: result.evaluated
+        ? `Evaluated ${result.evaluated} job(s).`
+        : "No due work, or evaluation is paused.",
+    };
+  } catch (e) {
+    return { message: message(e) };
+  }
+}
+export async function readJobSources(id: string) {
+  try {
+    return { sources: await workspaceApi.evidence(await ownerToken(), id) };
+  } catch (e) {
+    return { message: message(e) };
+  }
+}

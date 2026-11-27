@@ -194,6 +194,9 @@ def test_match_cache_and_proposal(client, identity, auth):
     key = command(h)
     receipt = ok(client.post(path + "/proposal", headers=key, json={"method": "lever"}))
     assert ok(client.post(path + "/proposal", headers=key, json={"method": "lever"})) == receipt
+    assert (
+        ok(client.post(path + "/proposal", headers=command(h), json={"method": "lever"})) == receipt
+    )
     output = ok(client.get(API + "/versions/" + receipt["resume_version_id"], headers=h))
     manifest = output["claim_manifest"]
     assert (
@@ -357,6 +360,10 @@ def test_mcp_protocol_and_permissions(client, identity, auth):
     sid = source(client, h, "Master", "Projects\nBuilt REST APIs with Python.")
     verify_all(client, h)
     jid = job(client, h, "Title: Platform Developer\nRequired: Python")
+    assert (
+        ok(client.get(f"{API}/mcp/read/job?record_id={jid}", headers=read))["canonical"]["title"]
+        == "Platform Developer"
+    )
     compare_path = f"{API}/mcp/read/comparison?record_id={jid}"
     assert client.get(compare_path, headers=read).status_code == 409
     ok(client.post(f"{API}/jobs/{jid}/compare", headers=h))

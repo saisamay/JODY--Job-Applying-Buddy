@@ -5,16 +5,19 @@ from datetime import datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, StringConstraints, ValidationInfo, field_validator
 from sqlalchemy import Connection, Select, Table, delete, func, select, text, true, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from .career.inference import terms
 from .config import private_preview
 from .controls import Key, Result, execute
+from .eligibility import Screening, normalize
 from .gmail.service import GmailStatus
 from .gmail.service import status as gmail_status
 from .integration_setup import IntegrationCard, cards
+from .job_pipeline import batch, dispatch, evaluate, invalidate
 from .routes import Owner
 from .security import tenant
 from .tables import (
@@ -46,6 +49,9 @@ class Entry(BaseModel):
 
 
 class JobView(BaseModel):
+    canonical: dict[str, Any] | None
+    screening: Screening | None
+    sightings: int
     manual: bool
     possible_duplicates: list[UUID]
     platform_job_id: str | None
@@ -124,6 +130,13 @@ def overview(request: Request, owner: Owner) -> Workspace:
             select(
                 jobs.c.id,
                 jobs.c.description,
+                jobs.c.canonical,
+                jobs.c.screening,
+                select(func.count())
+                .select_from(observations)
+                .where(observations.c.job_id == jobs.c.id)
+                .scalar_subquery()
+                .label("sightings"),
                 jobs.c.role,
                 select(observations.c.id)
                 .where(observations.c.job_id == jobs.c.id, observations.c.source == "manual")
@@ -173,6 +186,43 @@ def overview(request: Request, owner: Owner) -> Workspace:
                     and not other.source_url
                 ]
                 job.possible_duplicates = list(dict.fromkeys([*job.possible_duplicates, *inferred]))
+            f = job.canonical or {}
+            job.possible_duplicates.extend(
+                UUID(v)
+                for v in f.get("possible_duplicates", [])
+                if UUID(v) not in job.possible_duplicates
+            )
+            for other in job_views:
+                if other.id == job.id or other.id in job.possible_duplicates:
+                    continue
+                g = other.canonical or {}
+                if f.get("identities") and g.get("identities"):
+                    continue
+                employer = f.get("company") or job.company
+                location = f.get("location") or job.location
+                if (
+                    not employer
+                    or employer.casefold() != (g.get("company") or other.company or "").casefold()
+                ):
+                    continue
+                if (
+                    location
+                    and (g.get("location") or other.location)
+                    and location.casefold()
+                    != (g.get("location") or other.location or "").casefold()
+                ):
+                    continue
+                a = terms(f.get("title") or job.role or "")
+                b = terms(g.get("title") or other.role or "")
+                if (
+                    a
+                    and b
+                    and (
+                        len(a & b) / len(a | b) >= 0.6
+                        or set(f.get("inferred_roles", [])) & set(g.get("inferred_roles", []))
+                    )
+                ):
+                    job.possible_duplicates.append(other.id)
         return Workspace(
             gmail=gmail_status(conn),
             jobs=job_views,
@@ -334,6 +384,93 @@ def block_policy(body: BlockPolicy, request: Request, owner: Owner, key: Key) ->
             c.execute(
                 delete(blocks).where(blocks.c.kind == body.kind, blocks.c.value == body.value)
             )
+        invalidate(c, owner, request.app.state.secret_key)
         return {"enabled": body.enabled}
 
     return execute(request, owner, key, "source.blocklist", body.model_dump(), change)
+
+
+@workspace.post("/workspace/evaluate")
+def evaluate_jobs(request: Request, owner: Owner, job_id: UUID | None = None) -> dict[str, int]:
+    with tenant(request.app.state.db, owner) as c:
+        return {"evaluated": batch(c, owner, request.app.state.secret_key, job_id=job_id)}
+
+
+class SourceFact(BaseModel):
+    source: str
+    identifier: str | None
+    facts: dict[str, Any] | None
+    created_at: datetime
+
+
+@workspace.get("/workspace/jobs/{job_id}/evidence")
+def job_evidence(request: Request, owner: Owner, job_id: UUID) -> list[SourceFact]:
+    with tenant(request.app.state.db, owner) as c:
+        if not c.scalar(select(jobs.c.id).where(jobs.c.id == job_id)):
+            raise HTTPException(404, "Job not found.")
+        q = (
+            select(
+                observations.c.source,
+                sources.c.identifier,
+                observations.c.facts,
+                observations.c.created_at,
+            )
+            .select_from(observations.outerjoin(sources, observations.c.source_id == sources.c.id))
+            .where(observations.c.job_id == job_id)
+            .order_by(observations.c.created_at.desc())
+            .limit(100)
+        )
+        data = [SourceFact.model_validate(r) for r in c.execute(q).mappings()]
+        if any(r.source == "gmail" and r.facts is None for r in data):
+            retained = (
+                select(
+                    gmail_evidence.c.platform, gmail_evidence.c.facts, gmail_evidence.c.created_at
+                )
+                .where(gmail_evidence.c.job_id == job_id)
+                .order_by(gmail_evidence.c.created_at.desc())
+                .limit(100)
+            )
+            data.extend(
+                SourceFact(
+                    source="gmail retained evidence",
+                    identifier=platform,
+                    facts=facts,
+                    created_at=created,
+                )
+                for platform, facts, created in c.execute(retained)
+            )
+        return data
+
+
+@workspace.post("/workspace/jobs/{job_id}/legacy-review")
+def legacy_review(request: Request, owner: Owner, job_id: UUID) -> Screening:
+
+    with tenant(request.app.state.db, owner) as c:
+        if not dispatch(c):
+            raise HTTPException(409, "Evaluation is paused.")
+        row = (
+            c.execute(
+                select(jobs, companies.c.name.label("company"))
+                .select_from(jobs.outerjoin(companies, jobs.c.company_id == companies.c.id))
+                .where(jobs.c.id == job_id, jobs.c.canonical.is_(None))
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if not row:
+            raise HTTPException(404, "Historical job not found.")
+        facts = (
+            c.scalar(
+                select(gmail_evidence.c.facts)
+                .where(gmail_evidence.c.job_id == job_id)
+                .order_by(gmail_evidence.c.created_at.desc())
+                .limit(1)
+            )
+            or {}
+        )
+        f = normalize(
+            row["description"],
+            row["source_url"],
+            {"title": row["role"], "location": row["location"], "company": row["company"], **facts},
+        )
+        return evaluate(c, owner, request.app.state.secret_key, f)

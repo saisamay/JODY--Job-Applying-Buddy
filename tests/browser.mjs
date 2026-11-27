@@ -232,6 +232,31 @@ test(
       await page.getByLabel("Filter saved jobs").fill(fixture);
       await page.locator("summary").filter({ hasText: fixture }).click();
       await expect(page.getByText("Trust not assessed")).toBeVisible();
+      await page
+        .getByRole("button", { name: "View source evidence (1)" })
+        .click();
+      await expect(page.locator(".job-screening summary")).toContainText(
+        "manual",
+      );
+      await expect(
+        page.getByRole("heading", { name: "Awaiting evaluation" }),
+      ).toBeVisible();
+      await selectView(page, "Overview");
+      await page.getByRole("button", { name: "Resume tasks" }).click();
+      await expect(page.getByText("Background tasks active")).toBeVisible();
+      await selectView(page, "Job discovery");
+      await page.getByRole("button", { name: /Evaluate pending jobs/ }).click();
+      await expect(page.locator(".screen-filters [role=status]")).toContainText(
+        "Evaluated",
+      );
+      await page.getByLabel("Eligibility filter").selectOption("needs_review");
+      await page.getByLabel("Filter saved jobs").fill(fixture);
+      await expect(
+        page.locator("summary").filter({ hasText: fixture }),
+      ).toHaveCount(1);
+      await selectView(page, "Overview");
+      await page.getByRole("button", { name: "Pause all tasks" }).click();
+      await expect(page.getByText("Background tasks paused")).toBeVisible();
       await selectView(page, "Match analysis");
       await page
         .getByRole("button", { name: "Compare qualifications" })

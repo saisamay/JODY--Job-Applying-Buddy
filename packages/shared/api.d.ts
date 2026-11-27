@@ -742,6 +742,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/workspace/evaluate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Evaluate Jobs */
+    post: operations["evaluate_jobs_api_v1_workspace_evaluate_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/workspace/jobs/{job_id}/evidence": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Job Evidence */
+    get: operations["job_evidence_api_v1_workspace_jobs__job_id__evidence_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/workspace/jobs/{job_id}/legacy-review": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Legacy Review */
+    post: operations["legacy_review_api_v1_workspace_jobs__job_id__legacy_review_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/health/live": {
     parameters: {
       query?: never;
@@ -1063,6 +1114,12 @@ export interface components {
       preferred_locations?: string[] | null;
       /** Work Modes */
       work_modes?: ("remote" | "hybrid" | "onsite")[] | null;
+      /** Total Experience Years */
+      total_experience_years?: number | null;
+      /** Graduation Year */
+      graduation_year?: number | null;
+      /** Excluded Roles */
+      excluded_roles?: string[] | null;
       /** Salary Expectations */
       salary_expectations?: string | null;
       /** Availability */
@@ -1168,6 +1225,13 @@ export interface components {
     };
     /** JobView */
     JobView: {
+      /** Canonical */
+      canonical: {
+        [key: string]: unknown;
+      } | null;
+      screening: components["schemas"]["Screening"] | null;
+      /** Sightings */
+      sightings: number;
       /** Manual */
       manual: boolean;
       /** Possible Duplicates */
@@ -1392,6 +1456,42 @@ export interface components {
       /** Redis */
       redis: boolean;
     };
+    /** Reason */
+    Reason: {
+      /**
+       * Code
+       * @enum {string}
+       */
+      code:
+        | "blocked_source"
+        | "closed"
+        | "expired"
+        | "experience"
+        | "graduation"
+        | "education"
+        | "authorization"
+        | "location_requirement"
+        | "excluded_role"
+        | "role"
+        | "employment"
+        | "location"
+        | "work_mode"
+        | "salary"
+        | "missing"
+        | "ambiguous"
+        | "skills"
+        | "legacy"
+        | "duplicate";
+      /**
+       * Outcome
+       * @enum {string}
+       */
+      outcome: "hard" | "review" | "preference" | "excluded" | "closed";
+      /** Evidence */
+      evidence: string;
+      /** Explanation */
+      explanation: string;
+    };
     /** RepositoryDocument */
     RepositoryDocument: {
       /** Repository */
@@ -1441,6 +1541,41 @@ export interface components {
       /** Evidence */
       evidence: string;
     };
+    /** Screening */
+    Screening: {
+      /**
+       * Decision
+       * @enum {string}
+       */
+      decision:
+        | "eligible"
+        | "needs_review"
+        | "ineligible"
+        | "outside_preferences"
+        | "expired_or_closed"
+        | "blocklisted";
+      /**
+       * Mandatory
+       * @enum {string}
+       */
+      mandatory: "incompatible" | "unknown" | "no_known_conflict";
+      /**
+       * Preference
+       * @enum {string}
+       */
+      preference: "outside" | "aligned" | "unspecified";
+      /** Inferred Roles */
+      inferred_roles: string[];
+      /** Reasons */
+      reasons: components["schemas"]["Reason"][];
+      /** Missing */
+      missing: string[];
+      /**
+       * Assessed On
+       * Format: date
+       */
+      assessed_on: string;
+    };
     /** Secret */
     Secret: {
       /**
@@ -1469,6 +1604,22 @@ export interface components {
       content_base64: string;
       /** Reference */
       reference?: string | null;
+    };
+    /** SourceFact */
+    SourceFact: {
+      /** Source */
+      source: string;
+      /** Identifier */
+      identifier: string | null;
+      /** Facts */
+      facts: {
+        [key: string]: unknown;
+      } | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
     };
     /** SourceInfo */
     SourceInfo: {
@@ -3240,6 +3391,101 @@ export interface operations {
           "application/json": {
             [key: string]: unknown;
           };
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  evaluate_jobs_api_v1_workspace_evaluate_post: {
+    parameters: {
+      query?: {
+        job_id?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: number;
+          };
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  job_evidence_api_v1_workspace_jobs__job_id__evidence_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SourceFact"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  legacy_review_api_v1_workspace_jobs__job_id__legacy_review_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Screening"];
         };
       };
       /** @description Validation Error */

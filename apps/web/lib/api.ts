@@ -198,7 +198,27 @@ export type ProjectSource = Pick<
   Schema["SourceInfo"],
   "id" | "label" | "reference" | "kind"
 >;
+export type JobScreen = Schema["Screening"];
 export const workspaceApi = {
+  evaluate: (token: string, id?: string) =>
+    request<{ evaluated: number }>(
+      "/api/v1/workspace/evaluate" +
+        (id ? "?job_id=" + encodeURIComponent(id) : ""),
+      "POST",
+      token,
+    ),
+  legacyReview: (token: string, id: string) =>
+    request<JobScreen>(
+      "/api/v1/workspace/jobs/" + encodeURIComponent(id) + "/legacy-review",
+      "POST",
+      token,
+    ),
+  evidence: (token: string, id: string) =>
+    request<Schema["SourceFact"][]>(
+      "/api/v1/workspace/jobs/" + encodeURIComponent(id) + "/evidence",
+      "GET",
+      token,
+    ),
   projectSources: async (token: string): Promise<ProjectSource[]> => {
     const profile = await request<Schema["CareerProfile"]>(
       "/api/v1/career/profile",

@@ -2,16 +2,16 @@ import json
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import delete, func, insert, select, text
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .contracts import Error, Job, Login, ManualJob, SessionToken
+from .job_pipeline import ingest
 from .security import PRIVATE_OWNER, audit, digest, tenant
-from .tables import events, jobs, observations, sessions, sources, users
+from .tables import jobs, sessions, users
 
 router = APIRouter(prefix="/api/v1", responses={401: {"model": Error}, 422: {"model": Error}})
 bearer = HTTPBearer(auto_error=False)
@@ -102,47 +102,17 @@ def intake(payload: ManualJob, request: Request, owner: Owner) -> Job:
     url = str(payload.source_url) if payload.source_url else None
     fingerprint = digest(json.dumps([" ".join(payload.description.split()), url]))
     with tenant(request.app.state.db, owner) as conn:
-        row = (
-            conn.execute(
-                pg_insert(jobs)
-                .values(
-                    id=uuid4(),
-                    user_id=owner,
-                    fingerprint=fingerprint,
-                    description=payload.description,
-                    source_url=url,
-                )
-                .on_conflict_do_nothing(index_elements=["user_id", "fingerprint"])
-                .returning(*jobs.c)
-            )
-            .mappings()
-            .one_or_none()
+        jid, _ = ingest(
+            conn,
+            owner,
+            request.app.state.secret_key,
+            "manual",
+            "manual",
+            payload.description,
+            url,
+            {},
+            fingerprint,
+            fingerprint,
         )
-        if row is None:
-            row = (
-                conn.execute(
-                    select(jobs).where(jobs.c.user_id == owner, jobs.c.fingerprint == fingerprint)
-                )
-                .mappings()
-                .one()
-            )
-        else:
-            reference = {"user_id": owner, "job_id": row["id"]}
-            conn.execute(
-                pg_insert(sources)
-                .values(user_id=owner, kind="manual", identifier="manual")
-                .on_conflict_do_nothing()
-            )
-            source_id = conn.scalar(
-                select(sources.c.id).where(
-                    sources.c.kind == "manual", sources.c.identifier == "manual"
-                )
-            )
-            conn.execute(
-                insert(observations).values(
-                    id=uuid4(), source="manual", source_id=source_id, **reference
-                )
-            )
-            audit(conn, owner, "job.discovered", row["id"])
-            conn.execute(insert(events).values(id=uuid4(), kind="discovered", **reference))
+        row = conn.execute(select(jobs).where(jobs.c.id == jid)).mappings().one()
         return Job.model_validate(row)

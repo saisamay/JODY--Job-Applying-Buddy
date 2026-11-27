@@ -56,6 +56,9 @@ class Fields(Model):
     employment_types: Labels | None = None
     preferred_locations: Labels | None = None
     work_modes: Annotated[list[WorkMode], Field(max_length=3)] | None = None
+    total_experience_years: Annotated[float, Field(ge=0, le=90)] | None = None
+    graduation_year: Annotated[int, Field(ge=1900, le=2150)] | None = None
+    excluded_roles: Labels | None = None
     salary_expectations: Note | None = None
     availability: Note | None = None
     work_authorization: Note | None = None
@@ -104,6 +107,9 @@ STEP_FIELDS = {
         "employment_types",
         "preferred_locations",
         "work_modes",
+        "total_experience_years",
+        "graduation_year",
+        "excluded_roles",
         "salary_expectations",
         "availability",
         "work_authorization",

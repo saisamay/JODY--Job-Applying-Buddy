@@ -13,16 +13,13 @@ from sqlalchemy import Connection, Engine, func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..career.knowledge import unpack
+from ..job_pipeline import ingest
 from ..routes import Owner
 from ..security import digest, tenant
 from ..tables import (
-    companies,
-    events,
     gmail_evidence,
     gmail_messages,
     jobs,
-    observations,
-    sources,
     users,
 )
 from ..tables import gmail_runs as runs
@@ -35,7 +32,14 @@ from .service import router as router
 
 
 def store(
-    c: Connection, owner: UUID, mid: UUID, platform: str, slot: int, v: Vacancy, review: bool
+    c: Connection,
+    owner: UUID,
+    mid: UUID,
+    platform: str,
+    slot: int,
+    v: Vacancy,
+    review: bool,
+    key: bytes,
 ) -> bool:
     url = v.application_url
     # Generic careers pages are not vacancy identifiers.
@@ -48,31 +52,18 @@ def store(
     if isinstance(v, Posting):
         identity = ["platform", platform, v.platform_job_id]
     fingerprint = digest(json.dumps(["gmail", identity]))
-    jid = c.scalar(select(jobs.c.id).where(jobs.c.fingerprint == fingerprint))
-    new = jid is None
-    if new:
-        company = (
-            c.scalar(
-                insert(companies).values(user_id=owner, name=v.company).returning(companies.c.id)
-            )
-            if v.company
-            else None
-        )
-        jid = c.scalar(
-            insert(jobs)
-            .values(
-                user_id=owner,
-                role=v.title,
-                description=v.description or "",
-                location=v.location,
-                company_id=company,
-                source_url=v.posting_url if isinstance(v, Posting) else url,
-                application_url=url,
-                fingerprint=fingerprint,
-            )
-            .returning(jobs.c.id)
-        )
-        c.execute(insert(events).values(user_id=owner, job_id=jid, kind="discovered"))
+    jid, new = ingest(
+        c,
+        owner,
+        key,
+        "gmail",
+        platform,
+        v.description or "",
+        v.posting_url if isinstance(v, Posting) else url,
+        v.model_dump(exclude_none=True),
+        json.dumps([str(mid), slot]),
+        fingerprint,
+    )
     alternatives = []
     if not specific and not isinstance(v, Posting):
         candidates = (
@@ -89,7 +80,7 @@ def store(
             )
         )
         alternatives = [str(candidate) for candidate in c.scalars(candidates.distinct().limit(100))]
-    evidence_id = c.scalar(
+    c.execute(
         pg_insert(gmail_evidence)
         .values(
             user_id=owner,
@@ -106,18 +97,6 @@ def store(
         .on_conflict_do_nothing()
         .returning(gmail_evidence.c.id)
     )
-    if evidence_id:
-        c.execute(
-            pg_insert(sources)
-            .values(user_id=owner, kind="gmail", identifier=platform)
-            .on_conflict_do_nothing()
-        )
-        sid = c.scalar(
-            select(sources.c.id).where(sources.c.kind == "gmail", sources.c.identifier == platform)
-        )
-        c.execute(
-            insert(observations).values(user_id=owner, source="gmail", job_id=jid, source_id=sid)
-        )
     return new
 
 
@@ -205,7 +184,7 @@ def process(
             continue
         seen_cards.add(signature)
         review = unsafe or not (v.company and (v.application_url or isinstance(v, Posting)))
-        new = store(c, owner, mid, sender.split("@")[1], slot, v, review)
+        new = store(c, owner, mid, sender.split("@")[1], slot, v, review, key)
         n["extracted"] += 1
         n["stored" if new else "duplicates"] += 1
         n["review"] += int(review)

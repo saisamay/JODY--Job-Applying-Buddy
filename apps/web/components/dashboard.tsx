@@ -1,5 +1,11 @@
 "use client";
 import { gmailSource } from "../lib/gmail-display";
+import {
+  JobScreening,
+  BatchEvaluation,
+  screenKey,
+  screenLabels,
+} from "./job-screening";
 import { Gmail } from "./gmail";
 import Link from "next/link";
 import { useState } from "react";
@@ -155,6 +161,7 @@ function Jobs({
   compact?: boolean;
 }) {
   const [filter, setFilter] = useState("");
+  const [decision, setDecision] = useState("all");
   const [trust, setTrust] = useState("all");
   const list = jobs.filter(
     (j) =>
@@ -162,6 +169,9 @@ function Jobs({
         .join(" ")
         .toLowerCase()
         .includes(filter.toLowerCase()) &&
+      (decision === "all" ||
+        decision === screenKey(j) ||
+        (decision === "duplicate" && !!j.possible_duplicates.length)) &&
       (trust === "all" || (trust === "scored") === (j.trust_score !== null)),
   );
   return (
@@ -193,6 +203,23 @@ function Jobs({
           </select>
         </div>
       )}
+      {!compact && (
+        <div className="screen-filters">
+          <select
+            aria-label="Eligibility filter"
+            value={decision}
+            onChange={(e) => setDecision(e.target.value)}
+          >
+            <option value="all">All eligibility decisions</option>
+            {Object.entries(screenLabels).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+          <BatchEvaluation />
+        </div>
+      )}
       {list.length ? (
         (compact ? list.slice(0, 4) : list).map((j, i) => (
           <details className="job-detail" key={j.id}>
@@ -217,6 +244,7 @@ function Jobs({
             </summary>
             <div className="detail-body">
               <p>{j.description}</p>
+              {!compact && <JobScreening job={j} />}
               <div className="detail-tags">
                 <span className="tag">
                   <ShieldCheck size={13} />

@@ -16,7 +16,7 @@ from ..candidate_contracts import Model
 from ..controls import Key, execute
 from ..routes import Owner, bearer, session_digest
 from ..security import audit, tenant
-from ..tables import applications, approvals, career_proposals, resumes
+from ..tables import applications, approvals, career_proposals, jobs, resumes
 from .knowledge import Json, knowledge, verified
 from .routes import Preparation
 from .service import comparison, propose, resume_view
@@ -123,6 +123,27 @@ def read(view: View, request: Request, identity: Principal, record_id: UUID | No
         if record_id is None:
             raise HTTPException(422, "Supply the resource ID.")
         if view in {"job", "comparison"}:
+            if view == "job":
+                job_row = c.execute(
+                    select(jobs.c.canonical, jobs.c.screening).where(jobs.c.id == record_id)
+                ).first()
+                if job_row and job_row.canonical:
+                    try:
+                        analysis = comparison(
+                            request, c, owner, record_id, cached_only=True, normalized_only=True
+                        )
+                    except HTTPException as exc:
+                        if exc.status_code != 409:
+                            raise
+                        analysis = {
+                            "title": job_row.canonical.get("title"),
+                            "requirements": job_row.canonical.get("clauses", []),
+                        }
+                    return {
+                        **analysis,
+                        "canonical": job_row.canonical,
+                        "screening": job_row.screening,
+                    }
             return comparison(
                 request, c, owner, record_id, cached_only=True, normalized_only=view == "job"
             )

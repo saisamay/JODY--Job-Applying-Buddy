@@ -27,6 +27,7 @@ from .candidate_contracts import (
     Version,
 )
 from .controls import Key, Result, execute
+from .job_pipeline import invalidate
 from .routes import Owner
 from .security import seal, tenant, unseal
 from .tables import profiles, settings, uploaded_resumes, users
@@ -98,6 +99,7 @@ class Draft:
                 updated_at=func.now(),
             )
         )
+        invalidate(self.conn, self.owner, self.key)
         return {"revision": self.revision + 1}
 
     def view(self) -> Candidate:

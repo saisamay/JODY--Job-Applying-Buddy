@@ -14,6 +14,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     Integer,
     LargeBinary,
     MetaData,
@@ -188,6 +189,8 @@ sources = entity(
 )
 jobs = entity(
     "jobs",
+    Column("canonical", JSONB(none_as_null=True)),
+    Column("screening", JSONB(none_as_null=True)),
     Column("fingerprint", String(64), nullable=False),
     Column("description", Text, nullable=False),
     Column("source_url", Text),
@@ -201,8 +204,17 @@ jobs = entity(
     Column("status", job_status, nullable=False, server_default="discovered"),
     UniqueConstraint("user_id", "fingerprint"),
 )
+Index(
+    "job_screening_queue",
+    jobs.c.user_id,
+    jobs.c.id,
+    postgresql_where=text("canonical IS NOT NULL AND screening IS NULL"),
+)
 observations = entity(
     "source_observations",
+    Column("facts", JSONB),
+    Column("sighting_key", Text),
+    UniqueConstraint("user_id", "sighting_key"),
     Column("job_id", Uuid, nullable=False),
     ref("job_id", "jobs"),
     Column("source", job_source, nullable=False),
