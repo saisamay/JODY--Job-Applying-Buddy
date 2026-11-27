@@ -173,7 +173,7 @@ def test_five_message_boundary_and_platform_identity(client, admin_db, monkeypat
             assert (
                 state["status"] == "succeeded"
                 and state["finished"]
-                and state["counts"]["duplicates"] == 13
+                and state["counts"]["duplicates"] == 8
             )
             assert c.scalar(select(gmail_accounts.c.history_id)) == "50"
             assert c.scalar(select(func.count()).select_from(jobs)) == 2
@@ -249,3 +249,11 @@ def test_alert_heading_alone_is_not_a_platform_card():
     from jody.gmail.platforms import linkedin
 
     assert linkedin("<h2>New engineer jobs</h2>") == []
+
+
+def test_responsive_copies_count_once_and_use_title_anchor():
+    href = "https://www.linkedin.com/jobs/view/100"
+    html = f'<article><a href="{href}">Company logo</a><a href="{href}"><b>Engineer</b><span>Example · Pune</span></a></article>'
+    msg = part("text/html", html + html)
+    [(v, _)] = parse("linkedin.com", msg, body(msg))
+    assert (v.title, v.company, v.location) == ("Engineer", "Example", "Pune")

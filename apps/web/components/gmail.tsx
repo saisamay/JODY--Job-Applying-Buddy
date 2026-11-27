@@ -45,7 +45,7 @@ export function Gmail({
             " · Completed " + new Date(data.finished).toLocaleString()}
         </p>
       )}
-      {data.result === "pending" && (
+      {data.result === "pending" && !data.finalizing && (
         <p>Continue the bounded run to complete its remaining work.</p>
       )}
       {data.retry_at && (

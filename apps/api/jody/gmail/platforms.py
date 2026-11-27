@@ -117,7 +117,7 @@ def linkedin(html: str) -> list[tuple[Vacancy, bool]]:
         while node:
             grouped.setdefault(node, set()).add(identity[0])
             node = node.parent
-    rows: list[tuple[Vacancy, bool]] = []
+    cards: dict[str, tuple[Posting, bool]] = {}
     for a, jid, path in anchors:
         anchor_lines = [
             line
@@ -163,23 +163,23 @@ def linkedin(html: str) -> list[tuple[Vacancy, bool]]:
         if location and (work := re.search(r"\s*\((Remote|Hybrid|On[- ]?site)\)$", location, re.I)):
             mode = work[1]
             location = location[: work.start()].strip() or None
-        rows.append(
-            (
-                Posting(
-                    title=title,
-                    company=company,
-                    location=location,
-                    work_mode=mode,
-                    employment_type=employment,
-                    platform_job_id=jid,
-                    posting_url="https://www.linkedin.com/jobs/view/" + jid,
-                    observed_path=path,
-                ),
-                False,
-            )
+        card = Posting(
+            title=title,
+            company=company,
+            location=location,
+            work_mode=mode,
+            employment_type=employment,
+            platform_job_id=jid,
+            posting_url="https://www.linkedin.com/jobs/view/" + jid,
+            observed_path=path,
         )
-        rows[-1][0]._card_excerpt = excerpt
-    return rows
+        card._card_excerpt = excerpt
+        # Responsive copies and secondary links refer to the same vacancy.
+        # Prefer the anchor that directly contains its card metadata.
+        direct_metadata = any(re.search(r"\s+[·•]\s+", line) for line in anchor_lines[1:])
+        if jid not in cards or direct_metadata and not cards[jid][1]:
+            cards[jid] = card, direct_metadata
+    return [(card, False) for card, _ in cards.values()]
 
 
 REGISTRY = {"linkedin.com": linkedin}
