@@ -58,7 +58,7 @@ class Extractor:
                         {"role": "system", "content": INSTRUCTION},
                         {"role": "user", "content": content},
                     ],
-                    "options": {"temperature": 0, "num_predict": 1200},
+                    "options": {"temperature": 0, "num_predict": 1200, "num_ctx": 2048},
                 },
             )
             raw = obj["message"]["content"]

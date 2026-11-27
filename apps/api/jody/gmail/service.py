@@ -49,6 +49,10 @@ class GmailStatus(BaseModel):
     account: str | None = None
     reconnect: bool = False
     last_success: datetime | None = None
+    run_id: UUID | None = None
+    started: datetime | None = None
+    finished: datetime | None = None
+    finalizing: bool = False
     result: str | None = None
     counts: dict[str, int] = Field(default_factory=dict)
     retry_at: datetime | None = None
@@ -64,6 +68,12 @@ def status(c: Connection) -> GmailStatus:
         enabled=not private_preview() and google.configured(),
         account=row["account"] if row else None,
         last_success=row["last_success"] if row else None,
+        run_id=last["id"] if last else None,
+        started=last["created_at"] if last else None,
+        finished=last["finished"] if last else None,
+        finalizing=bool(
+            last and last["progress"].get("complete") and not last["progress"].get("ids")
+        ),
         result=last["status"] if last else None,
         counts=last["counts"] if last else {},
         retry_at=last["due"] if last and last["status"] == "retry" else None,

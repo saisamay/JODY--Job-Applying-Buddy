@@ -1094,6 +1094,17 @@ export interface components {
       reconnect: boolean;
       /** Last Success */
       last_success?: string | null;
+      /** Run Id */
+      run_id?: string | null;
+      /** Started */
+      started?: string | null;
+      /** Finished */
+      finished?: string | null;
+      /**
+       * Finalizing
+       * @default false
+       */
+      finalizing: boolean;
       /** Result */
       result?: string | null;
       /** Counts */
@@ -1157,6 +1168,16 @@ export interface components {
     };
     /** JobView */
     JobView: {
+      /** Manual */
+      manual: boolean;
+      /** Possible Duplicates */
+      possible_duplicates: string[];
+      /** Platform Job Id */
+      platform_job_id: string | null;
+      /** Work Mode */
+      work_mode: string | null;
+      /** Application Url */
+      application_url: string | null;
       /** Gmail Platform */
       gmail_platform: string | null;
       /** Employment Type */

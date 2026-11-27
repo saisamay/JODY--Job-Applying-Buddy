@@ -165,3 +165,11 @@ These rows capture the owner's phase 1 foundation instructions. The original pro
 | GM06 | P1 | Optional consented extractive inference and validated output | Synthetic failure checks; live extraction pending |
 | GM07 | P0 | Status, consent controls, results and discoveries in responsive workspace | Local browser regression |
 | GM08 | P0 | Bounded live read and repeat with owner approval | Awaiting owner |
+
+| ID | Priority | Acceptance | Status |
+|---|---|---|---|
+| GC01 | P0 | Rotated local owner credential rejects old key and invalidates sessions | Verified locally |
+| GC02 | P0 | Complete supplied LinkedIn card fields, canonical posting and strong identity; preserve distinct requisitions and evidence | Synthetic verification; live accuracy pending |
+| GC03 | P0 | Finalize at last bounded step and show correct provenance and continuation state | Implemented; local regression |
+| GC04 | P0 | Load owner-only literal provider settings with override and frontend isolation | Local loader regression |
+| GC05 | P0 | Preserve existing records, stage one-receipt repair comparison | Dry-run path; live read and repair require owner approval |

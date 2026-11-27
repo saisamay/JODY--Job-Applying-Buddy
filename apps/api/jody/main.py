@@ -118,7 +118,7 @@ def ready(request: Request, response: Response) -> Ready:
                 conn.scalar(
                     text("""
                 SELECT EXISTS (SELECT FROM pg_extension WHERE extname = 'vector')
-                   AND EXISTS (SELECT FROM alembic_version WHERE version_num = '0005_gmail')
+                   AND EXISTS (SELECT FROM alembic_version WHERE version_num = '0006_gmail_source')
             """)
                 )
             )

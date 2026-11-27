@@ -111,16 +111,21 @@ class TextHTML(HTMLParser):
             self.out.append(data)
 
 
-def body(part: Json, depth: int = 0) -> str:
+def body(part: Json, depth: int = 0, *, html_only: bool = False) -> str:
     if depth > 12 or part.get("filename") or part.get("body", {}).get("attachmentId"):
         return ""
     mime = part.get("mimeType", "")
     if mime.startswith("multipart/"):
-        pieces = [body(p, depth + 1) for p in part.get("parts", [])[:80]]
+        parts = part.get("parts", [])[:80]
+        if mime == "multipart/alternative":
+            parts = sorted(parts, key=lambda item: item.get("mimeType") == "text/html")
+        pieces = [body(p, depth + 1, html_only=html_only) for p in parts]
         if mime == "multipart/alternative":
             return next((p for p in reversed(pieces) if p.strip()), "")
         return "\n".join(pieces)[:80000]
     if mime not in {"text/plain", "text/html"}:
+        return ""
+    if html_only and mime != "text/html":
         return ""
     data = part.get("body", {}).get("data", "")
     if not isinstance(data, str) or len(data) > 500000:
@@ -136,6 +141,8 @@ def body(part: Json, depth: int = 0) -> str:
             value = blob.decode(hints.get_content_charset() or "utf-8", errors="replace")
         except LookupError:
             value = blob.decode(errors="replace")
+        if html_only:
+            return value[:200000]
         if mime == "text/html":
             html = TextHTML()
             html.feed(value[:200000])
@@ -272,3 +279,9 @@ def extract(text: str) -> list[tuple[Vacancy, bool]]:
             current["work_mode"] = line
     finish()
     return rows
+
+
+class Posting(Vacancy):
+    platform_job_id: str
+    posting_url: str
+    observed_path: str

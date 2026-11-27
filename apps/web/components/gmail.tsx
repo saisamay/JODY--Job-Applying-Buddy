@@ -1,5 +1,6 @@
 "use client";
-import { useActionState } from "react";
+import { runState } from "../lib/gmail-display";
+import { useActionState, useState } from "react";
 import { gmailAction } from "../app/actions";
 import type { WorkspaceData } from "../lib/api";
 export function Gmail({
@@ -10,11 +11,25 @@ export function Gmail({
   paused: boolean;
 }) {
   const [message, act, pending] = useActionState(gmailAction, "");
+  const [action, setAction] = useState("");
   return (
-    <section className="surface">
+    <section
+      className="surface gmail-intake"
+      onSubmit={(e) => {
+        const button = (e.nativeEvent as SubmitEvent).submitter;
+        setAction(button instanceof HTMLButtonElement ? button.value : "");
+      }}
+    >
       <h2>Gmail job alerts</h2>
       <p>
-        {data.state} {data.account}
+        {runState(
+          data.state,
+          data.result,
+          paused,
+          pending && action === "sync",
+          !!data.finalizing,
+        )}{" "}
+        {data.account}
       </p>
       <p>
         {data.last_success
@@ -22,14 +37,37 @@ export function Gmail({
             new Date(data.last_success).toLocaleString()
           : "No successful synchronization yet."}
       </p>
-      {data.result && <p>Latest run · {data.result}</p>}
+      {data.started && (
+        <p>
+          Run {data.run_id?.slice(0, 8)} · Started{" "}
+          {new Date(data.started).toLocaleString()}
+          {data.finished &&
+            " · Completed " + new Date(data.finished).toLocaleString()}
+        </p>
+      )}
+      {data.result === "pending" && (
+        <p>Continue the bounded run to complete its remaining work.</p>
+      )}
       {data.retry_at && (
         <p>Retry after {new Date(data.retry_at).toLocaleString()}</p>
       )}
       <dl>
         {Object.entries(data.counts || {}).map(([k, v]) => (
           <div key={k}>
-            <dt>{k.replaceAll("_", " ")}</dt>
+            <dt>
+              {(
+                {
+                  examined: "Emails examined",
+                  relevant: "Relevant emails",
+                  extracted: "Vacancies extracted",
+                  stored: "New records",
+                  duplicates: "Duplicates prevented",
+                  review: "Require review",
+                  failures: "Failures",
+                  gmail_requests: "Gmail API requests",
+                } as Record<string, string>
+              )[k] || k.replaceAll("_", " ")}
+            </dt>
             <dd>{v}</dd>
           </div>
         ))}

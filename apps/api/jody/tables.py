@@ -28,7 +28,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 
 metadata = MetaData()
-job_source = Enum("whatsapp", "linkedin_feed", "linkedin_post", "manual", name="job_source_enum")
+job_source = Enum(
+    "whatsapp", "linkedin_feed", "linkedin_post", "manual", "gmail", name="job_source_enum"
+)
 job_status = Enum(
     "discovered",
     "pending_approval",

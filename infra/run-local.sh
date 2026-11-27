@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
+set +x
 set -euo pipefail
 cd "$(dirname "$0")/.."
+export PYTHONPATH="$PWD/apps/api"
+provider_names=$(.venv/bin/python -c 'from jody.local_providers import NAMES; print(" ".join(sorted(NAMES)))')
+declare -A provider_overrides=()
+for name in $provider_names JODY_PROVIDERS_FILE; do
+  if [[ -v $name ]]; then provider_overrides[$name]=${!name}; fi
+done
 if [[ -f .env ]]; then
   set -a
   source .env
   set +a
 fi
-export PYTHONPATH="$PWD/apps/api"
+for name in "${!provider_overrides[@]}"; do export "$name=${provider_overrides[$name]}"; done
 export NEXT_TELEMETRY_DISABLED=1
 
 if [[ "${JODY_USE_EXISTING_SERVICES:-0}" != 1 ]]; then
@@ -21,7 +28,7 @@ fi
   JODY_RUNTIME_DATABASE_URL="$(.venv/bin/python -c 'from jody.config import runtime_url; print(runtime_url().render_as_string(hide_password=False))')"
   export JODY_RUNTIME_DATABASE_URL
   unset DATABASE_URL POSTGRES_PASSWORD JODY_DB_APP_PASSWORD
-  exec .venv/bin/uvicorn jody.main:app --host 127.0.0.1 --port 8000 --no-access-log
+  exec .venv/bin/python -m jody.local_providers .venv/bin/uvicorn jody.main:app --host 127.0.0.1 --port 8000 --no-access-log
 ) &
 api_pid=$!
 web_pid=""
@@ -44,7 +51,7 @@ if [[ "${JODY_WEB_MODE:-dev}" == start ]]; then
 else
   web_args=(dev --webpack)
 fi
-(unset JODY_ENCRYPTION_KEY JODY_DB_APP_PASSWORD JODY_RUNTIME_DATABASE_URL POSTGRES_PASSWORD DATABASE_URL REDIS_URL JODY_OWNER_KEY \
+(unset $provider_names JODY_ENCRYPTION_KEY JODY_DB_APP_PASSWORD JODY_RUNTIME_DATABASE_URL POSTGRES_PASSWORD DATABASE_URL REDIS_URL JODY_OWNER_KEY \
   JODY_NEON_TEST_DATABASE_URL JODY_GOOGLE_CLIENT_SECRET JODY_GOOGLE_CLIENT_ID \
   JODY_GITHUB_TOKEN JODY_TELEGRAM_BOT_TOKEN JODY_GEMINI_API_KEY JODY_GROQ_API_KEY \
   JODY_OPENROUTER_API_KEY JODY_NTFY_TOKEN; cd apps/web && exec ../../node_modules/.bin/next "${web_args[@]}" --hostname 127.0.0.1 --port 3000) &

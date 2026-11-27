@@ -7,7 +7,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, StringConstraints, ValidationInfo, field_validator
-from sqlalchemy import Connection, Select, Table, delete, func, select, true, update
+from sqlalchemy import Connection, Select, Table, delete, func, select, text, true, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .config import private_preview
@@ -28,6 +28,7 @@ from .tables import (
     gmail_evidence,
     jobs,
     mail,
+    observations,
     outreach,
     projects,
     settings,
@@ -45,6 +46,11 @@ class Entry(BaseModel):
 
 
 class JobView(BaseModel):
+    manual: bool
+    possible_duplicates: list[UUID]
+    platform_job_id: str | None
+    work_mode: str | None
+    application_url: str | None
     gmail_platform: str | None
     employment_type: str | None
     gmail_review: bool | None
@@ -119,6 +125,16 @@ def overview(request: Request, owner: Owner) -> Workspace:
                 jobs.c.id,
                 jobs.c.description,
                 jobs.c.role,
+                select(observations.c.id)
+                .where(observations.c.job_id == jobs.c.id, observations.c.source == "manual")
+                .exists()
+                .label("manual"),
+                evidence.c.facts["platform_job_id"].astext.label("platform_job_id"),
+                evidence.c.facts["work_mode"].astext.label("work_mode"),
+                jobs.c.application_url,
+                func.coalesce(evidence.c.facts["possible_duplicates"], text("'[]'::jsonb")).label(
+                    "possible_duplicates"
+                ),
                 evidence.c.platform.label("gmail_platform"),
                 evidence.c.needs_review.label("gmail_review"),
                 evidence.c.facts["employment_type"].astext.label("employment_type"),
@@ -142,9 +158,24 @@ def overview(request: Request, owner: Owner) -> Workspace:
             select(settings.c.min_trust_score_auto_apply, settings.c.min_ats_score_threshold)
         ).one()
         stored = list(conn.scalars(select(connections.c.provider).order_by(connections.c.provider)))
+        job_views = [JobView.model_validate(r) for r in conn.execute(query).mappings()]
+        for job in job_views:
+            if job.gmail_platform and job.role and not job.platform_job_id and not job.source_url:
+                inferred = [
+                    other.id
+                    for other in job_views
+                    if other.id != job.id
+                    and other.gmail_platform == job.gmail_platform
+                    and (other.role or "").casefold() == job.role.casefold()
+                    and other.company == job.company
+                    and other.location == job.location
+                    and not other.platform_job_id
+                    and not other.source_url
+                ]
+                job.possible_duplicates = list(dict.fromkeys([*job.possible_duplicates, *inferred]))
         return Workspace(
             gmail=gmail_status(conn),
-            jobs=[JobView.model_validate(r) for r in conn.execute(query).mappings()],
+            jobs=job_views,
             applications=recent(
                 conn,
                 select(

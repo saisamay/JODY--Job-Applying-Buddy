@@ -287,7 +287,7 @@ def test_pause_transaction_fences_racing_worker(client, auth, admin_db):
 
 def test_prd_enum_labels(admin_db):
     expected = {
-        "job_source_enum": "whatsapp linkedin_feed linkedin_post manual",
+        "job_source_enum": "whatsapp linkedin_feed linkedin_post manual gmail",
         "job_status_enum": "discovered pending_approval tailoring applied outreach_active shortlisted assessment interview offer rejected scam_blocked skipped",
         "apply_method_enum": "cold_email linkedin_easy_apply greenhouse lever workday wellfound internshala custom_portal",
         "outreach_status_enum": "queued connect_sent accepted dm_sent followup_sent replied failed",

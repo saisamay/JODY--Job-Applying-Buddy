@@ -77,3 +77,9 @@ For each provider record the date, operator/account, provider name, check perfor
 ## Prompt 6 Gmail intake
 
 Follow [private per-user enrollment](GMAIL_INTEGRATION.md) for the exact loopback frontend callback. The client ID and secret are reused. Stored Gmail vault text and the operator verifier cannot enroll a mailbox. Optional AI model environment and per-tenant consent are listed in [Gmail ingestion](GMAIL_INGESTION.md).
+
+## Local provider loading
+
+Store literal KEY=value lines in `~/.config/jody/providers.env` or set `JODY_PROVIDERS_FILE` to an alternate private regular file. The file must be owned by the running user and have no group/other permissions (0600 or 0400). Symbolic links are rejected. Outer matching quotes are optional. Shell commands, substitutions and variable expansion are never evaluated. Keep the file outside Git. Explicit process settings take precedence over repository defaults, which take precedence over the provider file. A missing optional file leaves those integrations unconfigured.
+
+The local API/worker loader recognizes the Google web client, loopback Ollama origin and cloud model identifiers. Shared operator API keys, the Telegram token, GitHub PAT and Neon test DSN are intended for authenticated operator probes. Cloud Gmail extraction still requires tenant consent, a per-tenant vault entry and confirmed free-only configuration. Saving provider settings enables no polling timer. The frontend launcher strips recognized provider settings. Production uses its existing service environment.

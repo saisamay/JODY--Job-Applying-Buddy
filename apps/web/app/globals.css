@@ -1672,3 +1672,42 @@ footer {
 .list-heading > span {
   flex: none;
 }
+
+.gmail-intake dl,
+.gmail-intake fieldset {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 1rem;
+}
+.gmail-intake dl div {
+  padding: 1rem;
+  border: 1px solid currentColor;
+  border-radius: 0.75rem;
+}
+.gmail-intake dd {
+  margin: 0.4rem 0 0;
+  font-size: 1.5rem;
+}
+.gmail-intake fieldset {
+  min-width: 0;
+  padding: 1rem;
+}
+.gmail-intake label {
+  display: grid;
+  gap: 0.4rem;
+}
+.gmail-intake input {
+  min-width: 0;
+  width: 100%;
+}
+.gmail-intake form:last-of-type {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.gmail-intake button {
+  padding: 0.6rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+}

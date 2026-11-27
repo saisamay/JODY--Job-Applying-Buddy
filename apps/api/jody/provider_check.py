@@ -208,6 +208,9 @@ def main() -> None:
     )
     try:
         provider = parser.parse_args().provider
+        from .local_providers import NAMES, load
+
+        load(NAMES)
         with operator_session():
             print(check(provider))
     except CheckError as exc:

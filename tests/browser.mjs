@@ -301,3 +301,25 @@ test(
     }
   },
 );
+
+test("Gmail source and synchronization presentation", async () => {
+  const { gmailSource, runState } =
+    await import("../apps/web/lib/gmail-display.ts");
+  assert.equal(gmailSource("linkedin.com"), "Gmail · LinkedIn Job Alerts");
+  assert.equal(
+    runState("Synchronizing", "pending", false, false, false),
+    "Waiting for continuation",
+  );
+  assert.equal(
+    runState("Synchronizing", "pending", false, true, true),
+    "Finalizing",
+  );
+  assert.equal(
+    runState("Synchronizing", "pending", true, false, false),
+    "Paused by owner",
+  );
+  assert.equal(
+    runState("Authorization expired", "failed", false, false, false),
+    "Authorization expired",
+  );
+});

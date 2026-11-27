@@ -15,11 +15,21 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from ..career.knowledge import unpack
 from ..routes import Owner
 from ..security import digest, tenant
-from ..tables import companies, events, gmail_evidence, gmail_messages, jobs, users
+from ..tables import (
+    companies,
+    events,
+    gmail_evidence,
+    gmail_messages,
+    jobs,
+    observations,
+    sources,
+    users,
+)
 from ..tables import gmail_runs as runs
 from . import google
-from .extract import RELEVANT, Json, Vacancy, body, classify, extract, headers
+from .extract import RELEVANT, Json, Posting, Vacancy, body, classify, headers
 from .models import assisted
+from .platforms import parse
 from .service import GmailStatus, Policy, account, change, enqueue, gate, lock, status
 from .service import router as router
 
@@ -34,13 +44,9 @@ def store(
         url,
         re.I,
     )
-    identity = (
-        ["url", url]
-        if specific
-        else ["source", platform, v.requisition]
-        if v.requisition
-        else ["message", str(mid), slot]
-    )
+    identity: list[object] = ["url", url] if specific else ["message", str(mid), slot]
+    if isinstance(v, Posting):
+        identity = ["platform", platform, v.platform_job_id]
     fingerprint = digest(json.dumps(["gmail", identity]))
     jid = c.scalar(select(jobs.c.id).where(jobs.c.fingerprint == fingerprint))
     new = jid is None
@@ -60,14 +66,30 @@ def store(
                 description=v.description or "",
                 location=v.location,
                 company_id=company,
-                source_url=url,
+                source_url=v.posting_url if isinstance(v, Posting) else url,
                 application_url=url,
                 fingerprint=fingerprint,
             )
             .returning(jobs.c.id)
         )
         c.execute(insert(events).values(user_id=owner, job_id=jid, kind="discovered"))
-    c.execute(
+    alternatives = []
+    if not specific and not isinstance(v, Posting):
+        candidates = (
+            select(gmail_evidence.c.job_id)
+            .join(jobs, gmail_evidence.c.job_id == jobs.c.id)
+            .where(
+                gmail_evidence.c.platform == platform,
+                jobs.c.id != jid,
+                func.lower(jobs.c.role) == v.title.lower(),
+                jobs.c.source_url.is_(None),
+                gmail_evidence.c.facts["company"].astext == v.company,
+                gmail_evidence.c.facts["location"].astext == v.location,
+                gmail_evidence.c.facts["requisition"].astext == v.requisition,
+            )
+        )
+        alternatives = [str(candidate) for candidate in c.scalars(candidates.distinct().limit(100))]
+    evidence_id = c.scalar(
         pg_insert(gmail_evidence)
         .values(
             user_id=owner,
@@ -77,11 +99,25 @@ def store(
             needs_review=review,
             facts={
                 **v.model_dump(exclude_none=True),
+                "possible_duplicates": alternatives,
                 "extraction_confidence": "needs_review" if review else "explicit_fields",
             },
         )
         .on_conflict_do_nothing()
+        .returning(gmail_evidence.c.id)
     )
+    if evidence_id:
+        c.execute(
+            pg_insert(sources)
+            .values(user_id=owner, kind="gmail", identifier=platform)
+            .on_conflict_do_nothing()
+        )
+        sid = c.scalar(
+            select(sources.c.id).where(sources.c.kind == "gmail", sources.c.identifier == platform)
+        )
+        c.execute(
+            insert(observations).values(user_id=owner, source="gmail", job_id=jid, source_id=sid)
+        )
     return new
 
 
@@ -119,11 +155,34 @@ def process(
         return
     content = body(message.get("payload", {}))
     category = classify(subject, content, trusted)
-    rows = extract(content) if category in RELEVANT else []
+    rows = (
+        parse(sender.split("@")[-1], message.get("payload", {}), content)
+        if category in RELEVANT
+        else []
+    )
     if not rows and category in RELEVANT and policy.providers and content:
         answer = assisted(db, c, owner, key, list(policy.providers), content, n)
         category = answer.classification
         rows = [(v, True) for v in answer.vacancies] if category in RELEVANT else []
+    elif (
+        len(rows) == 1 and policy.providers and (not rows[0][0].company or not rows[0][0].location)
+    ):
+        original, unsafe = rows[0]
+        # A single candidate has no competing card for a model to splice fields from.
+        try:
+            proposal = assisted(db, c, owner, key, list(policy.providers), content, n)
+        except google.Problem:
+            rows = [(original, True)]
+        else:
+            matches = [v for v in proposal.vacancies if v.title == original.title]
+            if len(matches) == 1 and len(proposal.vacancies) == 1:
+                additions = {
+                    k: value
+                    for k, value in matches[0].model_dump(exclude_none=True).items()
+                    if k in {"company", "location", "employment_type", "work_mode"}
+                    and not getattr(original, k)
+                }
+                rows = [(original.model_copy(update=additions), unsafe or bool(additions))]
     mid = c.execute(
         insert(gmail_messages)
         .values(user_id=owner, message_key=msg, account_key=account_key, classification=category)
@@ -131,16 +190,43 @@ def process(
     ).scalar_one()
     n["relevant"] += int(category in RELEVANT)
     n["review"] += int(not rows and category in RELEVANT | {"Unknown / needs review", "Suspicious"})
+    seen_cards: set[str] = set()
     for slot, (v, unsafe) in enumerate(rows):
-        review = unsafe or not (v.company and v.application_url)
+        signature = v.model_dump_json()
+        if signature in seen_cards and (
+            isinstance(v, Posting) or v.application_url or v.requisition
+        ):
+            n["duplicates"] += 1
+            continue
+        seen_cards.add(signature)
+        review = unsafe or not (v.company and (v.application_url or isinstance(v, Posting)))
         new = store(c, owner, mid, sender.split("@")[1], slot, v, review)
         n["extracted"] += 1
         n["stored" if new else "duplicates"] += 1
         n["review"] += int(review)
 
 
+def finish(c: Connection, owner: UUID, rid: UUID, p: Json, n: Json) -> None:
+    change(
+        c,
+        owner,
+        history_id=p["target"],
+        last_success=func.now(),
+        state="Last synchronization successful",
+    )
+    c.execute(
+        update(runs)
+        .where(runs.c.id == rid)
+        .values(status="succeeded", finished=func.now(), progress={}, counts=n)
+    )
+
+
 def step(
-    db: Engine, owner: UUID, key: bytes, clients: dict[bytes, google.Mailbox] | None = None
+    db: Engine,
+    owner: UUID,
+    key: bytes,
+    clients: dict[bytes, google.Mailbox] | None = None,
+    run_id: UUID | None = None,
 ) -> bool:
     with tenant(db, owner) as c:
         gate(c)
@@ -157,7 +243,7 @@ def step(
             .mappings()
             .first()
         )
-        if not run or not row["grant"]:
+        if not run or (run_id is not None and run_id != run["id"]) or not row["grant"]:
             return False
         policy = Policy.model_validate(row["policy"])
         p = dict(run["progress"])
@@ -178,6 +264,9 @@ def step(
         match = runs.c.id == run["id"]
         mail = None
         try:
+            if p.get("complete") and not p.get("ids"):
+                finish(c, owner, run["id"], p, n)
+                return False
             grant = bytes(row["grant"])
             mail = clients.get(grant) if clients is not None else None
             if mail is None:
@@ -190,20 +279,6 @@ def step(
                 msg = p["ids"][0]
                 process(db, c, owner, key, mail, digest(row["account"]), msg, policy, n)
                 p["ids"] = p["ids"][1:]
-            elif p.get("complete"):
-                change(
-                    c,
-                    owner,
-                    history_id=p["target"],
-                    last_success=func.now(),
-                    state="Last synchronization successful",
-                )
-                c.execute(
-                    update(runs)
-                    .where(match)
-                    .values(status="succeeded", finished=func.now(), progress={}, counts=n)
-                )
-                return False
             elif not p and row["history_id"]:
                 try:
                     delta = mail.get(
@@ -279,6 +354,9 @@ def step(
             )
             return False
         n["gmail_requests"] += mail.calls
+        if p.get("complete") and not p.get("ids"):
+            finish(c, owner, run["id"], p, n)
+            return False
         c.execute(
             update(runs).where(match).values(progress=p, counts=n, status="pending", attempts=0)
         )
@@ -288,10 +366,10 @@ def step(
 
 @router.post("/sync")
 def sync(request: Request, owner: Owner) -> GmailStatus:
-    enqueue(request.app.state.db, owner)
+    run_id = enqueue(request.app.state.db, owner)
     clients: dict[bytes, google.Mailbox] = {}
     for _ in range(6):
-        if not step(request.app.state.db, owner, request.app.state.secret_key, clients):
+        if not step(request.app.state.db, owner, request.app.state.secret_key, clients, run_id):
             break
     with tenant(request.app.state.db, owner) as c:
         return status(c)

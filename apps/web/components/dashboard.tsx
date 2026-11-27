@@ -1,4 +1,5 @@
 "use client";
+import { gmailSource } from "../lib/gmail-display";
 import { Gmail } from "./gmail";
 import Link from "next/link";
 import { useState } from "react";
@@ -204,8 +205,12 @@ function Jobs({
               <span className="job-name">
                 <b>{title(j)}</b>
                 <small>
-                  {j.company || sourceHost(j.source_url) || "Manual entry"} ·{" "}
-                  {date(j.created_at)}
+                  {j.gmail_platform
+                    ? gmailSource(j.gmail_platform)
+                    : j.company ||
+                      sourceHost(j.source_url) ||
+                      (j.manual ? "Manual entry" : "Source unknown")}{" "}
+                  · {date(j.created_at)}
                 </small>
               </span>
               <ChevronDown size={16} />
@@ -228,7 +233,52 @@ function Jobs({
                   {j.gmail_review ? "Needs review" : "Extracted from alert"}
                 </p>
               )}
-              {j.location && <p>{j.location}</p>}
+              {j.gmail_platform && (
+                <div>
+                  <p>
+                    Company · {j.company || "Unknown"} · Location ·{" "}
+                    {j.location || "Unknown"}
+                  </p>
+                  <p>
+                    Workplace · {j.work_mode || "Unknown"} · Platform ID ·{" "}
+                    {j.platform_job_id || "Unknown"}
+                  </p>
+                  {j.gmail_review && (
+                    <p>
+                      Review ·{" "}
+                      {!j.company || !j.source_url
+                        ? [
+                            !j.company && "company missing",
+                            !j.source_url && "posting link missing",
+                          ]
+                            .filter(Boolean)
+                            .join(", ")
+                        : "Confirm extracted fields"}
+                    </p>
+                  )}
+                  {!!j.possible_duplicates?.length && (
+                    <p>
+                      Possible duplicate · {j.possible_duplicates.length}{" "}
+                      similar workspace record(s)
+                    </p>
+                  )}
+                  <p>
+                    Direct application ·{" "}
+                    {j.application_url && sourceHost(j.application_url) ? (
+                      <a
+                        href={j.application_url}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Open link
+                      </a>
+                    ) : (
+                      "Unknown"
+                    )}
+                  </p>
+                </div>
+              )}
+              {!j.gmail_platform && j.location && <p>{j.location}</p>}
               {sourceHost(j.source_url) && (
                 <a
                   className="text-link"

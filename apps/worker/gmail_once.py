@@ -6,9 +6,11 @@ import os
 from fastapi import HTTPException
 from jody.gmail.service import enqueue
 from jody.gmail.worker import step
+from jody.local_providers import load
 from jody.security import PRIVATE_OWNER, encryption_key, runtime_engine
 
 if __name__ == "__main__":
+    load()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--schedule", action="store_true")
     args = parser.parse_args()

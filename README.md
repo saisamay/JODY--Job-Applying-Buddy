@@ -114,3 +114,5 @@ Name, email and public profile links keep their original database columns. Addit
 For the private Vercel and Render preview, see the [deployment runbook and environment checklist](docs/PRIVATE_PREVIEW.md).
 
 For Prompt 5.5, start with the [step-by-step credential configuration and verification guide](docs/SECRETS_CHECKLIST.md). The [integration contract](docs/INTEGRATIONS.md) distinguishes operator checks, current private features and planned provider connections.
+
+Local Gmail intake automatically loads the owner-only provider file described in [the credential guide](docs/SECRETS_CHECKLIST.md#local-provider-loading). With existing local data services and a built frontend, start with `JODY_USE_EXISTING_SERVICES=1 JODY_WEB_MODE=start ./infra/run-local.sh`.
